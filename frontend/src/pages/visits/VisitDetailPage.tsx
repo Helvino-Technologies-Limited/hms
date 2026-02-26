@@ -131,12 +131,6 @@ export default function VisitDetailPage() {
     } catch { /* handled */ } finally { setSendingToBilling(false); }
   };
 
-  const handleMarkLabReview = async () => {
-    if (!id) return;
-    await visitApi.updateTriage(Number(id), { triageStatus: 'PENDING_LAB_REVIEW' });
-    loadVisit();
-  };
-
   const hospital = useHospitalStore();
 
   const printDiagnosisReport = () => {

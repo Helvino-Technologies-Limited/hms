@@ -96,6 +96,7 @@ export interface Visit {
   triagePriority: TriagePriority | null;
   triageNotes: string;
   triagedAt: string;
+  triagedById?: number;
   triagedByName: string;
   completed: boolean;
   createdAt: string;
