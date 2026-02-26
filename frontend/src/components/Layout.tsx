@@ -5,13 +5,14 @@ import { useUIStore } from '../store/uiStore';
 import { useNotificationStore } from '../store/notificationStore';
 import {
   LayoutDashboard, Users, CalendarDays, Stethoscope, Pill, FlaskConical, Scan,
-  CreditCard, Shield, BedDouble, UserCog, BarChart3, Bell, LogOut, Menu, X, Settings, Heart, ClipboardList
+  CreditCard, Shield, BedDouble, UserCog, BarChart3, Bell, LogOut, Menu, X, Settings, Heart, ClipboardList, Activity
 } from 'lucide-react';
 
 const baseNavItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/patients', label: 'Patients', icon: Users },
   { path: '/appointments', label: 'Appointments', icon: CalendarDays },
+  { path: '/triage', label: 'Triage', icon: Activity },
   { path: '/visits', label: 'Consultations', icon: Stethoscope },
   { path: '/pharmacy', label: 'Pharmacy', icon: Pill },
   { path: '/lab', label: 'Laboratory', icon: FlaskConical },

@@ -109,6 +109,88 @@ public class BillingService {
         return mapToDto(billing);
     }
 
+    public BillingDTO getBillingByVisit(Long visitId) {
+        return billingRepository.findByVisitId(visitId)
+                .map(this::mapToDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Billing not found for visit: " + visitId));
+    }
+
+    @Transactional(readOnly = false)
+    public BillingDTO populateFromVisit(Long billingId) {
+        Billing billing = billingRepository.findById(billingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Billing", billingId));
+        if (billing.getVisit() == null) {
+            throw new IllegalStateException("Billing is not linked to a visit");
+        }
+        com.helvinotech.hms.entity.Visit visit = billing.getVisit();
+
+        // Add prescriptions as pharmacy items (only undispensed ones not already billed)
+        for (com.helvinotech.hms.entity.Prescription rx : visit.getPrescriptions()) {
+            String desc = (rx.getDrug() != null ? rx.getDrug().getGenericName() : "Drug") +
+                    " - " + rx.getDosage() + " x " + rx.getQuantityPrescribed() + " units";
+            boolean alreadyBilled = billing.getItems().stream()
+                    .anyMatch(i -> i.getDescription().equals(desc));
+            if (!alreadyBilled) {
+                BigDecimal unitPrice = rx.getDrug() != null && rx.getDrug().getSellingPrice() != null
+                        ? rx.getDrug().getSellingPrice()
+                        : BigDecimal.ZERO;
+                BillingItem item = BillingItem.builder()
+                        .billing(billing)
+                        .serviceType("Pharmacy")
+                        .description(desc)
+                        .quantity(rx.getQuantityPrescribed() != null ? rx.getQuantityPrescribed() : 1)
+                        .unitPrice(unitPrice)
+                        .totalPrice(unitPrice.multiply(BigDecimal.valueOf(rx.getQuantityPrescribed() != null ? rx.getQuantityPrescribed() : 1)))
+                        .build();
+                billing.getItems().add(item);
+            }
+        }
+
+        // Add lab orders as lab items (only completed/released ones)
+        for (com.helvinotech.hms.entity.LabOrder lo : visit.getLabOrders()) {
+            String desc = lo.getTest() != null ? lo.getTest().getTestName() : "Lab Test";
+            boolean alreadyBilled = billing.getItems().stream()
+                    .anyMatch(i -> i.getDescription().equals(desc) && "Laboratory".equals(i.getServiceType()));
+            if (!alreadyBilled) {
+                BigDecimal price = lo.getTest() != null && lo.getTest().getPrice() != null
+                        ? lo.getTest().getPrice()
+                        : BigDecimal.ZERO;
+                BillingItem item = BillingItem.builder()
+                        .billing(billing)
+                        .serviceType("Laboratory")
+                        .description(desc)
+                        .quantity(1)
+                        .unitPrice(price)
+                        .totalPrice(price)
+                        .build();
+                billing.getItems().add(item);
+            }
+        }
+
+        // Add imaging orders
+        for (com.helvinotech.hms.entity.ImagingOrder io : visit.getImagingOrders()) {
+            String desc = io.getImagingType() + (io.getBodyPart() != null ? " - " + io.getBodyPart() : "");
+            boolean alreadyBilled = billing.getItems().stream()
+                    .anyMatch(i -> i.getDescription().equals(desc) && "Imaging".equals(i.getServiceType()));
+            if (!alreadyBilled) {
+                BigDecimal price = io.getPrice() != null ? io.getPrice() : BigDecimal.ZERO;
+                BillingItem item = BillingItem.builder()
+                        .billing(billing)
+                        .serviceType("Imaging")
+                        .description(desc)
+                        .quantity(1)
+                        .unitPrice(price)
+                        .totalPrice(price)
+                        .build();
+                billing.getItems().add(item);
+            }
+        }
+
+        recalculateTotal(billing);
+        billing = billingRepository.save(billing);
+        return mapToDto(billing);
+    }
+
     public BigDecimal getRevenueToday() {
         LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
         return billingRepository.sumRevenueByDateRange(startOfDay, startOfDay.plusDays(1));

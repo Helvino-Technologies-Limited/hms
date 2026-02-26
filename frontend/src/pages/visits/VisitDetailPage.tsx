@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Plus, Pill, FlaskConical, Scan, Printer, Share2 } from 'lucide-react';
-import { visitApi, pharmacyApi, labApi, patientApi } from '../../api/services';
+import { ArrowLeft, Save, Plus, Pill, FlaskConical, Scan, Printer, Share2, AlertTriangle, CreditCard, Receipt } from 'lucide-react';
+import { visitApi, pharmacyApi, labApi, patientApi, billingApi } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
 import { useHospitalStore } from '../../store/hospitalStore';
 import type { Visit, Drug, LabTest } from '../../types';
@@ -26,6 +26,10 @@ export default function VisitDetailPage() {
   const [showLabModal, setShowLabModal] = useState(false);
   const [labTests, setLabTests] = useState<LabTest[]>([]);
   const [selectedTestId, setSelectedTestId] = useState('');
+
+  // Billing
+  const [sendingToBilling, setSendingToBilling] = useState(false);
+  const [billingSuccess, setBillingSuccess] = useState(false);
 
   const loadVisit = useCallback(async () => {
     if (!id) return;
@@ -103,6 +107,33 @@ export default function VisitDetailPage() {
     if (!id || !selectedTestId || !userId) return;
     await labApi.createOrder(Number(id), Number(selectedTestId), userId);
     setShowLabModal(false);
+    loadVisit();
+  };
+
+  const handleSendToBilling = async () => {
+    if (!visit) return;
+    setSendingToBilling(true);
+    try {
+      // Check if billing for this visit already exists
+      let billing;
+      try {
+        const existing = await billingApi.getByVisit(visit.id);
+        billing = existing.data.data;
+      } catch {
+        // Create new billing linked to this visit
+        const created = await billingApi.create({ patientId: visit.patientId, visitId: visit.id });
+        billing = created.data.data;
+      }
+      // Populate with prescriptions + lab + imaging
+      await billingApi.populateFromVisit(billing.id);
+      setBillingSuccess(true);
+      setTimeout(() => setBillingSuccess(false), 4000);
+    } catch { /* handled */ } finally { setSendingToBilling(false); }
+  };
+
+  const handleMarkLabReview = async () => {
+    if (!id) return;
+    await visitApi.updateTriage(Number(id), { triageStatus: 'PENDING_LAB_REVIEW' });
     loadVisit();
   };
 
@@ -367,7 +398,7 @@ ${imagingOrders.map(io => `<tr>
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button onClick={printDiagnosisReport} className="flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 text-gray-700">
               <Printer className="w-4 h-4" /> Print Report
             </button>
@@ -376,6 +407,11 @@ ${imagingOrders.map(io => `<tr>
             </button>
             {!visit.completed && (
               <>
+                <button onClick={handleSendToBilling} disabled={sendingToBilling}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60">
+                  <CreditCard className="w-4 h-4" />
+                  {sendingToBilling ? 'Sending...' : 'Send to Billing'}
+                </button>
                 {editing ? (
                   <button onClick={handleSave} className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
                     <Save className="w-4 h-4" /> Save
@@ -394,6 +430,59 @@ ${imagingOrders.map(io => `<tr>
           </div>
         </div>
       </div>
+
+      {/* Billing success toast */}
+      {billingSuccess && (
+        <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+          <Receipt className="w-5 h-5 text-blue-600 shrink-0" />
+          <p className="text-sm text-blue-800 font-medium">
+            Prescriptions, lab tests, and imaging orders have been sent to Billing. Patient can proceed to pay.
+          </p>
+        </div>
+      )}
+
+      {/* Lab Results Ready Banner */}
+      {visit.labOrders && visit.labOrders.some(lo => lo.status === 'RELEASED') && !visit.completed && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-xl px-4 py-3">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">Lab Results Ready — Review Required</p>
+            <div className="mt-2 space-y-1">
+              {visit.labOrders.filter(lo => lo.status === 'RELEASED').map(lo => (
+                <div key={lo.id} className={`text-xs px-2 py-1 rounded inline-flex items-center gap-2 mr-2 ${lo.abnormal ? 'bg-red-100 text-red-700 font-semibold' : 'bg-green-100 text-green-700'}`}>
+                  <FlaskConical className="w-3 h-3" />
+                  {lo.testName}: <strong>{lo.result}</strong>
+                  {lo.abnormal ? ' ⚠ Abnormal' : ' ✓ Normal'}
+                  {lo.remarks && ` — ${lo.remarks}`}
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-amber-700 mt-2">
+              Please review the results above, update diagnosis/treatment plan, then complete the visit or order further investigations.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Triage Info Bar */}
+      {visit.triageStatus && visit.triageStatus !== 'WAITING' && (
+        <div className="bg-white rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-4 flex-wrap text-sm">
+          <span className="font-medium text-gray-700">Triage:</span>
+          <StatusBadge status={visit.triageStatus} />
+          {visit.triagePriority && (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold
+              ${visit.triagePriority === 'IMMEDIATE' ? 'bg-red-100 text-red-700' :
+                visit.triagePriority === 'URGENT' ? 'bg-orange-100 text-orange-700' :
+                visit.triagePriority === 'LESS_URGENT' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-green-100 text-green-700'}`}>
+              {visit.triagePriority.replace(/_/g, ' ')}
+            </span>
+          )}
+          {visit.triagedByName && <span className="text-gray-500">by {visit.triagedByName}</span>}
+          {visit.triagedAt && <span className="text-gray-400">{new Date(visit.triagedAt).toLocaleTimeString()}</span>}
+          {visit.triageNotes && <span className="text-gray-500 italic">"{visit.triageNotes}"</span>}
+        </div>
+      )}
 
       {/* Clinical Notes + Vitals */}
       <div className="grid lg:grid-cols-2 gap-6">

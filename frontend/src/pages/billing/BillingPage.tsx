@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, CreditCard, Filter, Search, X } from 'lucide-react';
+import { Plus, CreditCard, Filter, Search, X, Printer } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import StatusBadge from '../../components/StatusBadge';
 import { billingApi, patientApi } from '../../api/services';
+import { useHospitalStore } from '../../store/hospitalStore';
 import type { Billing, Patient, PaymentStatus, PaymentMethod } from '../../types';
 
 const paymentStatuses: PaymentStatus[] = ['PENDING', 'PARTIAL', 'PAID', 'REFUNDED', 'WAIVED'];
@@ -17,6 +18,7 @@ const emptyItemForm = { serviceType: '', description: '', quantity: 1, unitPrice
 const emptyPaymentForm = { amount: 0, paymentMethod: 'CASH' as PaymentMethod, referenceNumber: '' };
 
 export default function BillingPage() {
+  const hospital = useHospitalStore();
   const [invoices, setInvoices] = useState<Billing[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -157,6 +159,99 @@ export default function BillingPage() {
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(amount || 0);
+
+  const printReceipt = (invoice: Billing) => {
+    const win = window.open('', '_blank');
+    if (!win) return;
+    const balance = Math.max(0, (invoice.totalAmount || 0) - (invoice.paidAmount || 0) - (invoice.insuranceCoveredAmount || 0));
+    win.document.write(`<!DOCTYPE html><html><head><title>Receipt — ${invoice.invoiceNumber}</title>
+<style>
+  body{font-family:Arial,sans-serif;max-width:380px;margin:0 auto;padding:20px;font-size:12px;color:#222}
+  .center{text-align:center}
+  .header{border-bottom:2px dashed #aaa;padding-bottom:10px;margin-bottom:10px}
+  .header h2{margin:0 0 2px;font-size:16px}
+  .header p{margin:2px 0;font-size:10px;color:#666}
+  .title{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:8px 0}
+  .info-row{display:flex;justify-content:space-between;margin:3px 0;font-size:11px}
+  .info-row .label{color:#666}
+  .divider{border-top:1px dashed #ccc;margin:8px 0}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th{text-align:left;padding:4px 2px;border-bottom:1px solid #ddd;font-size:10px;color:#666;text-transform:uppercase}
+  td{padding:4px 2px;border-bottom:1px solid #f0f0f0}
+  .text-right{text-align:right}
+  .total-row{font-weight:700;font-size:12px}
+  .payment-section{margin-top:8px}
+  .status-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;
+    background:${invoice.status === 'PAID' ? '#dcfce7' : invoice.status === 'PARTIAL' ? '#fff7ed' : '#fef2f2'};
+    color:${invoice.status === 'PAID' ? '#166534' : invoice.status === 'PARTIAL' ? '#9a3412' : '#991b1b'}}
+  .footer{border-top:2px dashed #aaa;padding-top:10px;margin-top:12px;text-align:center;font-size:10px;color:#888}
+  @media print{body{padding:0}}
+</style></head><body>
+<div class="header center">
+  <h2>${hospital.name}</h2>
+  <p>${hospital.tagline}</p>
+  <p>${hospital.address}</p>
+  <p>Tel: ${hospital.phone} | ${hospital.email}</p>
+</div>
+<div class="center">
+  <div class="title">Official Receipt</div>
+  <span class="status-badge">${invoice.status}</span>
+</div>
+<div class="divider"></div>
+<div class="info-row"><span class="label">Invoice No:</span><strong>${invoice.invoiceNumber}</strong></div>
+<div class="info-row"><span class="label">Patient:</span><span>${invoice.patientName}</span></div>
+<div class="info-row"><span class="label">Patient No:</span><span>${invoice.patientNo}</span></div>
+<div class="info-row"><span class="label">Date:</span><span>${new Date(invoice.createdAt).toLocaleDateString()}</span></div>
+${invoice.visitId ? `<div class="info-row"><span class="label">Visit #:</span><span>${invoice.visitId}</span></div>` : ''}
+<div class="divider"></div>
+<p style="font-size:11px;font-weight:600;margin:6px 0 4px">Services</p>
+<table>
+  <thead><tr><th>Description</th><th>Qty</th><th class="text-right">Price</th><th class="text-right">Total</th></tr></thead>
+  <tbody>
+    ${(invoice.items || []).map(item => `
+    <tr>
+      <td>${item.description}<br><span style="color:#888;font-size:10px">${item.serviceType}</span></td>
+      <td>${item.quantity}</td>
+      <td class="text-right">${formatCurrency(item.unitPrice)}</td>
+      <td class="text-right">${formatCurrency(item.totalPrice)}</td>
+    </tr>`).join('')}
+    <tr class="total-row">
+      <td colspan="3" class="text-right">Sub Total:</td>
+      <td class="text-right">${formatCurrency(invoice.totalAmount)}</td>
+    </tr>
+    ${invoice.insuranceCoveredAmount ? `<tr><td colspan="3" class="text-right" style="color:#0369a1">Insurance:</td><td class="text-right" style="color:#0369a1">-${formatCurrency(invoice.insuranceCoveredAmount)}</td></tr>` : ''}
+    <tr class="total-row" style="font-size:13px">
+      <td colspan="3" class="text-right">BALANCE DUE:</td>
+      <td class="text-right" style="color:${balance > 0 ? '#dc2626' : '#16a34a'}">${formatCurrency(balance)}</td>
+    </tr>
+  </tbody>
+</table>
+${invoice.payments && invoice.payments.length > 0 ? `
+<div class="divider"></div>
+<p style="font-size:11px;font-weight:600;margin:6px 0 4px">Payments Received</p>
+<table>
+  <thead><tr><th>Receipt No</th><th>Method</th><th class="text-right">Amount</th><th>Date</th></tr></thead>
+  <tbody>
+    ${invoice.payments.map(p => `<tr>
+      <td>${p.receiptNumber}</td>
+      <td>${p.paymentMethod.replace(/_/g, ' ')}</td>
+      <td class="text-right" style="color:#16a34a">${formatCurrency(p.amount)}</td>
+      <td style="font-size:10px">${new Date(p.createdAt).toLocaleDateString()}</td>
+    </tr>`).join('')}
+    <tr class="total-row"><td colspan="2" class="text-right">Total Paid:</td>
+      <td class="text-right" style="color:#16a34a">${formatCurrency(invoice.paidAmount)}</td><td></td></tr>
+  </tbody>
+</table>` : ''}
+<div class="footer">
+  <p>Thank you for choosing ${hospital.name}</p>
+  <p>Printed: ${new Date().toLocaleString()}</p>
+  <p style="margin-top:4px;font-size:9px">Powered by Helvino Technologies | www.helvino.com</p>
+</div>
+</body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
 
   const columns = [
     { key: 'invoiceNumber', label: 'Invoice #' },
@@ -299,6 +394,15 @@ export default function BillingPage() {
           <div className="animate-pulse space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-8 bg-gray-100 rounded" />)}</div>
         ) : selectedInvoice ? (
           <div className="space-y-6">
+            {/* Print Receipt Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={() => printReceipt(selectedInvoice)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-xl hover:bg-gray-900 transition-colors">
+                <Printer className="w-4 h-4" /> Print Receipt
+              </button>
+            </div>
+
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               <div className="bg-gray-50 rounded-lg p-3">

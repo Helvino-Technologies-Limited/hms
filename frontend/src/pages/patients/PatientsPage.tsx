@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, UserPlus, Pencil } from 'lucide-react';
+import { Search, UserPlus, Pencil, AlertTriangle } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { patientApi, insuranceApi } from '../../api/services';
@@ -39,6 +39,8 @@ export default function PatientsPage() {
   const [editModal, setEditModal] = useState(false);
   const [editForm, setEditForm] = useState(emptyForm);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [duplicates, setDuplicates] = useState<Patient[]>([]);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
 
   const fetchPatients = useCallback(async () => {
     setLoading(true);
@@ -66,6 +68,7 @@ export default function PatientsPage() {
 
   const openModal = async () => {
     setForm(emptyForm);
+    setDuplicates([]);
     setModalOpen(true);
     try {
       const res = await insuranceApi.getCompanies();
@@ -73,6 +76,15 @@ export default function PatientsPage() {
     } catch {
       // Ignore
     }
+  };
+
+  const checkForDuplicates = async (phone: string, idNumber: string) => {
+    if (!phone && !idNumber) { setDuplicates([]); return; }
+    setCheckingDuplicates(true);
+    try {
+      const res = await patientApi.checkDuplicates(phone || '', idNumber || '');
+      setDuplicates(res.data.data);
+    } catch { /* */ } finally { setCheckingDuplicates(false); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,6 +243,7 @@ export default function PatientsPage() {
                   type="text"
                   value={form.idNumber}
                   onChange={(e) => updateField('idNumber', e.target.value)}
+                  onBlur={() => checkForDuplicates(form.phone, form.idNumber)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -241,9 +254,36 @@ export default function PatientsPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
+                  onBlur={() => checkForDuplicates(form.phone, form.idNumber)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+
+              {/* Duplicate Warning */}
+              {checkingDuplicates && (
+                <div className="md:col-span-2 text-xs text-gray-400">Checking for existing patients...</div>
+              )}
+              {duplicates.length > 0 && (
+                <div className="md:col-span-2 bg-orange-50 border border-orange-300 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-4 h-4 text-orange-600 shrink-0" />
+                    <p className="text-sm font-semibold text-orange-800">Possible Duplicate Patient(s) Found</p>
+                  </div>
+                  {duplicates.map(d => (
+                    <div key={d.id} className="flex items-center justify-between bg-white rounded-lg p-2 mb-1 text-sm border border-orange-200">
+                      <div>
+                        <span className="font-medium text-gray-900">{d.fullName}</span>
+                        <span className="text-gray-500 text-xs ml-2">{d.patientNo} | {d.phone} | ID: {d.idNumber || '-'}</span>
+                      </div>
+                      <button type="button" onClick={() => { setModalOpen(false); navigate(`/patients/${d.id}`); }}
+                        className="text-xs text-blue-600 hover:underline font-medium ml-2 shrink-0">
+                        View Patient
+                      </button>
+                    </div>
+                  ))}
+                  <p className="text-xs text-orange-700 mt-1">Please verify this is not the same patient before registering.</p>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
                 <input

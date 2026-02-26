@@ -27,11 +27,37 @@ public class PatientService {
 
     @Transactional(readOnly = false)
     public PatientDTO createPatient(PatientDTO dto) {
+        // Duplicate detection by phone
+        if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
+            patientRepository.findByPhone(dto.getPhone().trim()).ifPresent(existing -> {
+                throw new IllegalStateException("DUPLICATE_PHONE:" + existing.getPatientNo() + ":" + existing.getFullName());
+            });
+        }
+        // Duplicate detection by national ID
+        if (dto.getIdNumber() != null && !dto.getIdNumber().isBlank()) {
+            patientRepository.findByIdNumber(dto.getIdNumber().trim()).ifPresent(existing -> {
+                throw new IllegalStateException("DUPLICATE_ID:" + existing.getPatientNo() + ":" + existing.getFullName());
+            });
+        }
         Patient patient = new Patient();
         patient.setPatientNo(generatePatientNo());
         mapDtoToEntity(dto, patient);
         patient = patientRepository.save(patient);
         return mapEntityToDto(patient);
+    }
+
+    public java.util.List<PatientDTO> checkDuplicates(String phone, String idNumber) {
+        java.util.List<PatientDTO> matches = new java.util.ArrayList<>();
+        if (phone != null && !phone.isBlank()) {
+            patientRepository.findByPhone(phone.trim()).map(this::mapEntityToDto).ifPresent(matches::add);
+        }
+        if (idNumber != null && !idNumber.isBlank()) {
+            patientRepository.findByIdNumber(idNumber.trim())
+                    .map(this::mapEntityToDto)
+                    .filter(p -> matches.stream().noneMatch(m -> m.getId().equals(p.getId())))
+                    .ifPresent(matches::add);
+        }
+        return matches;
     }
 
     public PatientDTO getPatient(Long id) {

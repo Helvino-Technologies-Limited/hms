@@ -4,6 +4,7 @@ import com.helvinotech.hms.dto.LabOrderDTO;
 import com.helvinotech.hms.dto.LabTestDTO;
 import com.helvinotech.hms.entity.*;
 import com.helvinotech.hms.enums.LabOrderStatus;
+import com.helvinotech.hms.enums.TriageStatus;
 import com.helvinotech.hms.exception.ResourceNotFoundException;
 import com.helvinotech.hms.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -112,7 +113,16 @@ public class LabService {
                 .orElseThrow(() -> new ResourceNotFoundException("Lab Order", orderId));
         order.setReleasedAt(LocalDateTime.now());
         order.setStatus(LabOrderStatus.RELEASED);
-        return mapOrderToDto(labOrderRepository.save(order));
+        LabOrder saved = labOrderRepository.save(order);
+        // Automatically mark visit as PENDING_LAB_REVIEW so it appears in the review queue
+        Visit visit = saved.getVisit();
+        if (visit != null && !visit.isCompleted()
+                && visit.getTriageStatus() != TriageStatus.PENDING_LAB_REVIEW
+                && visit.getTriageStatus() != TriageStatus.COMPLETED) {
+            visit.setTriageStatus(TriageStatus.PENDING_LAB_REVIEW);
+            visitRepository.save(visit);
+        }
+        return mapOrderToDto(saved);
     }
 
     public long countPendingOrders() {

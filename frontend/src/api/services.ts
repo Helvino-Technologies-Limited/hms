@@ -17,6 +17,8 @@ export const patientApi = {
   getByNo: (no: string) => api.get<ApiResponse<Patient>>(`/patients/by-no/${no}`),
   search: (q: string, page = 0) =>
     api.get<ApiResponse<PageResponse<Patient>>>(`/patients/search?q=${q}&page=${page}`),
+  checkDuplicates: (phone: string, idNumber: string) =>
+    api.get<ApiResponse<Patient[]>>(`/patients/check-duplicates?phone=${encodeURIComponent(phone)}&idNumber=${encodeURIComponent(idNumber)}`),
   create: (data: Partial<Patient>) => api.post<ApiResponse<Patient>>('/patients', data),
   update: (id: number, data: Partial<Patient>) => api.put<ApiResponse<Patient>>(`/patients/${id}`, data),
 };
@@ -28,8 +30,11 @@ export const visitApi = {
   getByPatient: (patientId: number, page = 0) =>
     api.get<ApiResponse<PageResponse<Visit>>>(`/visits/patient/${patientId}?page=${page}`),
   getDoctorQueue: (doctorId: number) => api.get<ApiResponse<Visit[]>>(`/visits/doctor/${doctorId}/queue`),
+  getTriageQueue: () => api.get<ApiResponse<Visit[]>>('/visits/triage-queue'),
+  getLabReviewQueue: () => api.get<ApiResponse<Visit[]>>('/visits/lab-review'),
   create: (data: Partial<Visit>) => api.post<ApiResponse<Visit>>('/visits', data),
   update: (id: number, data: Partial<Visit>) => api.put<ApiResponse<Visit>>(`/visits/${id}`, data),
+  updateTriage: (id: number, data: Partial<Visit>) => api.put<ApiResponse<Visit>>(`/visits/${id}/triage`, data),
   complete: (id: number) => api.put<ApiResponse<Visit>>(`/visits/${id}/complete`),
 };
 
@@ -101,10 +106,13 @@ export const billingApi = {
     api.get<ApiResponse<PageResponse<Billing>>>(`/billing/patient/${patientId}?page=${page}`),
   getByStatus: (status: string, page = 0) =>
     api.get<ApiResponse<PageResponse<Billing>>>(`/billing/status/${status}?page=${page}`),
+  getByVisit: (visitId: number) => api.get<ApiResponse<Billing>>(`/billing/visit/${visitId}`),
   create: (data: Partial<Billing>) => api.post<ApiResponse<Billing>>('/billing', data),
   addItem: (billingId: number, item: Partial<BillingItem>) =>
     api.post<ApiResponse<Billing>>(`/billing/${billingId}/items`, item),
   processPayment: (data: Partial<Payment>) => api.post<ApiResponse<Billing>>('/billing/payments', data),
+  populateFromVisit: (billingId: number) =>
+    api.post<ApiResponse<Billing>>(`/billing/${billingId}/populate-from-visit`),
 };
 
 // Insurance

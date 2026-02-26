@@ -14,6 +14,8 @@ import java.util.Optional;
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Long> {
     Optional<Patient> findByPatientNo(String patientNo);
+    Optional<Patient> findByPhone(String phone);
+    Optional<Patient> findByIdNumber(String idNumber);
 
     @Query("SELECT p FROM Patient p WHERE LOWER(p.fullName) LIKE LOWER(CONCAT('%', :q, '%')) " +
            "OR LOWER(p.patientNo) LIKE LOWER(CONCAT('%', :q, '%')) " +

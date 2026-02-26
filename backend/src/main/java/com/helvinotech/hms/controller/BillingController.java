@@ -51,4 +51,14 @@ public class BillingController {
     public ResponseEntity<ApiResponse<BillingDTO>> processPayment(@Valid @RequestBody PaymentDTO payment) {
         return ResponseEntity.ok(ApiResponse.success(billingService.processPayment(payment)));
     }
+
+    @PostMapping("/{id}/populate-from-visit")
+    public ResponseEntity<ApiResponse<BillingDTO>> populateFromVisit(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(billingService.populateFromVisit(id)));
+    }
+
+    @GetMapping("/visit/{visitId}")
+    public ResponseEntity<ApiResponse<BillingDTO>> getByVisit(@PathVariable Long visitId) {
+        return ResponseEntity.ok(ApiResponse.success(billingService.getBillingByVisit(visitId)));
+    }
 }

@@ -1,5 +1,7 @@
 package com.helvinotech.hms.entity;
 
+import com.helvinotech.hms.enums.TriagePriority;
+import com.helvinotech.hms.enums.TriageStatus;
 import com.helvinotech.hms.enums.VisitType;
 import jakarta.persistence.*;
 import lombok.*;
@@ -60,6 +62,23 @@ public class Visit {
     private Double weight;
     private Double height;
     private Double oxygenSaturation;
+
+    // Triage Fields
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private TriageStatus triageStatus = TriageStatus.WAITING;
+
+    @Enumerated(EnumType.STRING)
+    private TriagePriority triagePriority;
+
+    @Column(columnDefinition = "TEXT")
+    private String triageNotes;
+
+    private LocalDateTime triagedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "triaged_by")
+    private User triagedBy;
 
     @Builder.Default
     private boolean completed = false;

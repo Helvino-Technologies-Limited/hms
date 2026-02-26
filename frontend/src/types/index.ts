@@ -24,6 +24,8 @@ export type BedStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'MAINTENANCE';
 export type AdmissionStatus = 'ADMITTED' | 'DISCHARGED' | 'TRANSFERRED' | 'DECEASED';
 export type ClaimStatus = 'DRAFT' | 'SUBMITTED' | 'PRE_AUTHORIZED' | 'APPROVED' | 'PARTIALLY_APPROVED' | 'REJECTED' | 'PAID';
 export type ImagingType = 'XRAY' | 'ULTRASOUND' | 'CT_SCAN' | 'MRI';
+export type TriagePriority = 'IMMEDIATE' | 'URGENT' | 'LESS_URGENT' | 'NON_URGENT';
+export type TriageStatus = 'WAITING' | 'TRIAGED' | 'IN_CONSULTATION' | 'PENDING_LAB_REVIEW' | 'COMPLETED';
 
 export interface AuthResponse {
   token: string;
@@ -89,6 +91,12 @@ export interface Visit {
   weight: number | null;
   height: number | null;
   oxygenSaturation: number | null;
+  // Triage
+  triageStatus: TriageStatus;
+  triagePriority: TriagePriority | null;
+  triageNotes: string;
+  triagedAt: string;
+  triagedByName: string;
   completed: boolean;
   createdAt: string;
   prescriptions: Prescription[];

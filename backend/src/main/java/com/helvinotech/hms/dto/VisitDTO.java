@@ -1,5 +1,7 @@
 package com.helvinotech.hms.dto;
 
+import com.helvinotech.hms.enums.TriagePriority;
+import com.helvinotech.hms.enums.TriageStatus;
 import com.helvinotech.hms.enums.VisitType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -32,6 +34,13 @@ public class VisitDTO {
     private Double weight;
     private Double height;
     private Double oxygenSaturation;
+    // Triage
+    private TriageStatus triageStatus;
+    private TriagePriority triagePriority;
+    private String triageNotes;
+    private LocalDateTime triagedAt;
+    private Long triagedById;
+    private String triagedByName;
     private boolean completed;
     private LocalDateTime createdAt;
     private List<PrescriptionDTO> prescriptions;

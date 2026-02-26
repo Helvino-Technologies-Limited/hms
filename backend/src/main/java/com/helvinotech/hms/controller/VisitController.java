@@ -53,4 +53,19 @@ public class VisitController {
     public ResponseEntity<ApiResponse<VisitDTO>> complete(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(visitService.completeVisit(id)));
     }
+
+    @PutMapping("/{id}/triage")
+    public ResponseEntity<ApiResponse<VisitDTO>> updateTriage(@PathVariable Long id, @RequestBody VisitDTO dto) {
+        return ResponseEntity.ok(ApiResponse.success(visitService.updateTriage(id, dto)));
+    }
+
+    @GetMapping("/triage-queue")
+    public ResponseEntity<ApiResponse<List<VisitDTO>>> getTriageQueue() {
+        return ResponseEntity.ok(ApiResponse.success(visitService.getTriageQueue()));
+    }
+
+    @GetMapping("/lab-review")
+    public ResponseEntity<ApiResponse<List<VisitDTO>>> getLabReviewQueue() {
+        return ResponseEntity.ok(ApiResponse.success(visitService.getLabReviewQueue()));
+    }
 }

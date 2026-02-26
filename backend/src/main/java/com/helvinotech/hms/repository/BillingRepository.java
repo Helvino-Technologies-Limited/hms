@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 public interface BillingRepository extends JpaRepository<Billing, Long> {
     Page<Billing> findByPatientIdOrderByCreatedAtDesc(Long patientId, Pageable pageable);
     Page<Billing> findByStatus(PaymentStatus status, Pageable pageable);
+    java.util.Optional<Billing> findByVisitId(Long visitId);
 
     @Query("SELECT COALESCE(SUM(b.paidAmount), 0) FROM Billing b WHERE b.createdAt BETWEEN :start AND :end")
     BigDecimal sumRevenueByDateRange(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);

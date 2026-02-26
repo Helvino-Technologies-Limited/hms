@@ -10,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/patients")
 @RequiredArgsConstructor
@@ -45,5 +47,12 @@ public class PatientController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<PatientDTO>> update(@PathVariable Long id, @Valid @RequestBody PatientDTO dto) {
         return ResponseEntity.ok(ApiResponse.success(patientService.updatePatient(id, dto)));
+    }
+
+    @GetMapping("/check-duplicates")
+    public ResponseEntity<ApiResponse<List<PatientDTO>>> checkDuplicates(
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String idNumber) {
+        return ResponseEntity.ok(ApiResponse.success(patientService.checkDuplicates(phone, idNumber)));
     }
 }
