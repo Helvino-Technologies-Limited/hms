@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <Link to="/" className="flex items-center gap-2 mb-10">
             <Heart className="w-8 h-8 text-primary-600" fill="currentColor" />
-            <span className="text-xl font-bold text-gray-900">Helvino HMS</span>
+            <span className="text-xl font-bold text-gray-900">Ogada Church Medical Clinic</span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-500 mb-8">Sign in to access the hospital management system</p>
@@ -52,7 +52,7 @@ export default function LoginPage() {
                 <input
                   type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
-                  placeholder="admin@helvino-hms.com" required
+                  placeholder="admin@example.com" required
                 />
               </div>
             </div>
@@ -80,7 +80,7 @@ export default function LoginPage() {
           </form>
 
           <p className="text-sm text-gray-400 mt-6 text-center">
-            Default: admin@helvino-hms.com / admin123
+            Default: admin@example.com / admin123
           </p>
         </div>
       </div>

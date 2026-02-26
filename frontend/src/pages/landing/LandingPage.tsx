@@ -24,7 +24,7 @@ const stats = [
 ];
 
 const testimonials = [
-  { name: 'Dr. Sarah Kamau', role: 'Chief Medical Officer', quote: 'Helvino HMS transformed how we manage patient care. The integrated clinical workflow saves us hours every day.' },
+  { name: 'Dr. Sarah Kamau', role: 'Chief Medical Officer', quote: 'Ogada Church Medical Clinic transformed how we manage patient care. The integrated clinical workflow saves us hours every day.' },
   { name: 'James Mwangi', role: 'Hospital Administrator', quote: 'The billing module alone paid for itself within months. Real-time revenue tracking is invaluable.' },
   { name: 'Nurse Grace Otieno', role: 'Head Nurse, ICU', quote: 'Managing bed assignments and nursing notes has never been easier. The ward module is exceptionally well designed.' },
 ];
@@ -37,7 +37,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart className="w-8 h-8 text-primary-600" fill="currentColor" />
-            <span className="text-xl font-bold text-gray-900">Helvino HMS</span>
+            <span className="text-xl font-bold text-gray-900">Ogada Church Medical Clinic</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-gray-600 hover:text-primary-600 transition-colors">Features</a>
@@ -156,7 +156,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Trusted by Healthcare Professionals</h2>
-            <p className="text-lg text-gray-500">What our users say about Helvino HMS</p>
+            <p className="text-lg text-gray-500">What our users say about Ogada Church Medical Clinic</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map(({ name, role, quote }) => (
@@ -182,10 +182,10 @@ export default function LandingPage() {
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <Heart className="w-8 h-8 text-primary-400" fill="currentColor" />
-                <span className="text-xl font-bold">Helvino HMS</span>
+                <span className="text-xl font-bold">Ogada Church Medical Clinic</span>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
-                A product of Helvino Technologies Limited. Empowering healthcare facilities across
+                Developed and maintained by Helvino Technologies Limited. Empowering healthcare facilities across
                 East Africa with cutting-edge hospital management solutions.
               </p>
               <div className="space-y-2">
@@ -196,7 +196,7 @@ export default function LandingPage() {
                   <Phone className="w-4 h-4" /> +254 703 445 756
                 </div>
                 <div className="flex items-center gap-3 text-gray-400 text-sm">
-                  <MapPin className="w-4 h-4" /> Nairobi, Kenya
+                  <MapPin className="w-4 h-4" /> helvino.org
                 </div>
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 text-center text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Helvino Technologies Limited. All rights reserved.
+            &copy; {new Date().getFullYear()} Helvino Technologies Limited. All rights reserved. | helvino.org
           </div>
         </div>
       </footer>

@@ -13,7 +13,7 @@ interface HospitalState extends HospitalProfile {
 }
 
 const defaults: HospitalProfile = {
-  name: 'Helvino Hospital',
+  name: 'Ogada Church Medical Clinic',
   tagline: 'Quality Healthcare Services',
   address: 'Nairobi, Kenya',
   phone: '+254 703 445 756',

@@ -123,7 +123,7 @@ export default function SettingsPage() {
           <div className="space-y-3">
             <div className="flex justify-between py-2 border-b border-gray-50">
               <span className="text-sm text-gray-500">System Version</span>
-              <span className="text-sm font-medium text-gray-900">HMS v1.0.0</span>
+              <span className="text-sm font-medium text-gray-900">OCMC v1.0.0</span>
             </div>
             <div className="flex justify-between py-2 border-b border-gray-50">
               <span className="text-sm text-gray-500">License</span>
@@ -144,7 +144,7 @@ export default function SettingsPage() {
               <Heart className="w-8 h-8 text-primary-600" fill="currentColor" />
               <div>
                 <p className="text-sm font-semibold text-primary-900">Helvino Technologies Limited</p>
-                <p className="text-xs text-primary-600">helvinotechltd@gmail.com | +254 703 445 756</p>
+                <p className="text-xs text-primary-600">helvinotechltd@gmail.com | +254 703 445 756 | helvino.org</p>
               </div>
             </div>
           </div>

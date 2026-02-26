@@ -617,7 +617,7 @@ ${!bill.items || bill.items.length === 0 ? '<tr><td colspan="4" style="text-alig
 ${bill.payments?.length > 0 ? `<div class="payments"><h3>Payments</h3><table><thead><tr><th>Date</th><th>Method</th><th>Amount</th><th>Receipt #</th><th>Received By</th></tr></thead><tbody>
 ${bill.payments.map(p => `<tr><td>${new Date(p.createdAt).toLocaleDateString()}</td><td>${p.paymentMethod}</td><td>${formatCurrency(p.amount)}</td><td>${p.receiptNumber || '-'}</td><td>${p.receivedByName || '-'}</td></tr>`).join('')}
 </tbody></table></div>` : ''}
-<div class="footer"><p>Thank you for choosing ${hospital.name}</p><p>Printed on ${new Date().toLocaleString()}</p><p style="margin-top:6px;font-size:10px;color:#bbb">Powered by Helvino Technologies | www.helvino.com</p></div>
+<div class="footer"><p>Thank you for choosing ${hospital.name}</p><p>Printed on ${new Date().toLocaleString()}</p><p style="margin-top:6px;font-size:10px;color:#bbb">Developed by Helvino Technologies Limited | helvino.org | 0703445756</p></div>
 </body></html>`);
     win.document.close();
     win.focus();

@@ -274,7 +274,7 @@ ${imagingOrders.map(io => `<tr>
 <div class="footer">
 <p>This is a computer-generated medical report from ${hospital.name}.</p>
 <p>Printed on ${new Date().toLocaleString()}</p>
-<p style="margin-top:4px;font-size:9px;color:#ccc">Powered by Helvino Technologies | www.helvino.com</p>
+<p style="margin-top:4px;font-size:9px;color:#ccc">Developed by Helvino Technologies Limited | helvino.org | 0703445756</p>
 </div>
 </body></html>`);
     win.document.close();

@@ -245,7 +245,7 @@ ${invoice.payments && invoice.payments.length > 0 ? `
 <div class="footer">
   <p>Thank you for choosing ${hospital.name}</p>
   <p>Printed: ${new Date().toLocaleString()}</p>
-  <p style="margin-top:4px;font-size:9px">Powered by Helvino Technologies | www.helvino.com</p>
+  <p style="margin-top:4px;font-size:9px">Developed by Helvino Technologies Limited | helvino.org | 0703445756</p>
 </div>
 </body></html>`);
     win.document.close();
