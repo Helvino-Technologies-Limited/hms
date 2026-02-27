@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <Link to="/" className="flex items-center gap-2 mb-10">
             <Heart className="w-8 h-8 text-primary-600" fill="currentColor" />
-            <span className="text-xl font-bold text-gray-900">Ogada Church Medical Clinic</span>
+            <span className="text-xl font-bold text-gray-900">Helvino Technologies Limited</span>
           </Link>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-500 mb-8">Sign in to access the hospital management system</p>
@@ -79,9 +79,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-sm text-gray-400 mt-6 text-center">
-            Default: admin@example.com / admin123
-          </p>
         </div>
       </div>
 
