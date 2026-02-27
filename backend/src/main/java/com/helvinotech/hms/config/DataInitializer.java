@@ -19,18 +19,23 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (userRepository.count() == 0) {
-            User admin = User.builder()
-                    .fullName("System Administrator")
-                    .email("admin@helvino-hms.com")
-                    .passwordHash(passwordEncoder.encode("admin123"))
-                    .phone("0703445756")
-                    .role(UserRole.SUPER_ADMIN)
-                    .department("Administration")
-                    .active(true)
-                    .build();
-            userRepository.save(admin);
-            log.info("Default admin user created: admin@helvino-hms.com / admin123");
-        }
+        final String adminEmail = "admin@helvino.org";
+
+        // Remove any users that are not the designated admin
+        userRepository.findAll().stream()
+                .filter(u -> !u.getEmail().equalsIgnoreCase(adminEmail))
+                .forEach(userRepository::delete);
+
+        // Create or update the admin user
+        User admin = userRepository.findByEmail(adminEmail).orElse(new User());
+        admin.setFullName("System Administrator");
+        admin.setEmail(adminEmail);
+        admin.setPasswordHash(passwordEncoder.encode("Hospital@2026"));
+        admin.setPhone("0703445756");
+        admin.setRole(UserRole.SUPER_ADMIN);
+        admin.setDepartment("Administration");
+        admin.setActive(true);
+        userRepository.save(admin);
+        log.info("Admin user ready: {}", adminEmail);
     }
 }
