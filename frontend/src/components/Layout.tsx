@@ -53,8 +53,8 @@ export default function Layout() {
         <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
           <Heart className="w-8 h-8 text-primary-600" fill="currentColor" />
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Ogada Church Medical Clinic</h1>
-            <p className="text-xs text-gray-500">Medical Clinic</p>
+            <h1 className="text-lg font-bold text-gray-900">Helvino Technologies Limited</h1>
+            <p className="text-xs text-gray-500">Hospital Manager</p>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3">
