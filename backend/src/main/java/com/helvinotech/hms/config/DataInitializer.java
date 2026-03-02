@@ -21,11 +21,6 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) {
         final String adminEmail = "admin@helvino.org";
 
-        // Remove any users that are not the designated admin
-        userRepository.findAll().stream()
-                .filter(u -> !u.getEmail().equalsIgnoreCase(adminEmail))
-                .forEach(userRepository::delete);
-
         // Create or update the admin user
         User admin = userRepository.findByEmail(adminEmail).orElse(new User());
         admin.setFullName("System Administrator");
