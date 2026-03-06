@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Search, Plus, AlertTriangle, Pill, ClipboardList, FileText, X, Pencil } from 'lucide-react';
+import { Search, Plus, AlertTriangle, Pill, ClipboardList, FileText, X, Pencil, RotateCcw } from 'lucide-react';
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
-import { pharmacyApi, patientApi, visitApi } from '../../api/services';
+import { pharmacyApi, pharmacyRefundApi, patientApi, visitApi } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
-import type { Drug, Prescription, Patient, Visit } from '../../types';
+import type { Drug, Prescription, Patient, Visit, PharmacyRefund } from '../../types';
 
-type Tab = 'inventory' | 'prescriptions';
+type Tab = 'inventory' | 'prescriptions' | 'refunds';
 
-const DRUG_CATEGORIES = ['Antibiotics', 'Analgesics', 'Antihistamines', 'Antihypertensives', 'Antidiabetics', 'Vitamins', 'Antacids', 'Other'];
+const DRUG_CATEGORIES = [
+  'Antibiotics', 'Analgesics', 'Antihistamines', 'Antihypertensives', 'Antidiabetics',
+  'Vitamins', 'Antacids', 'Anti-Asthmatic', 'Anti-Hypertensive', 'Anti-Pyretic',
+  'Anti-Diuretic', 'Painkillers', 'Other',
+];
 const FORMULATIONS = ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream', 'Ointment', 'Drops', 'Inhaler', 'Suspension'];
 const FREQUENCIES = ['Once daily', 'Twice daily', '3 times daily', '4 times daily', 'Every 4 hours', 'Every 6 hours', 'Every 8 hours', 'Every 12 hours', 'As needed', 'At bedtime'];
 const DURATIONS = ['1 day', '3 days', '5 days', '7 days', '10 days', '14 days', '21 days', '30 days', '60 days', '90 days'];
@@ -38,6 +42,21 @@ export default function PharmacyPage() {
   const [rxLoading, setRxLoading] = useState(false);
   const [dispensing, setDispensing] = useState<number | null>(null);
   const [lowStock, setLowStock] = useState<Drug[]>([]);
+
+  // Refunds
+  const [refunds, setRefunds] = useState<PharmacyRefund[]>([]);
+  const [refundPage, setRefundPage] = useState(0);
+  const [refundTotalPages, setRefundTotalPages] = useState(1);
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [refundModal, setRefundModal] = useState(false);
+  const [dispensedRx, setDispensedRx] = useState<Prescription[]>([]);
+  const [dispensedRxPage, setDispensedRxPage] = useState(0);
+  const [dispensedRxTotalPages, setDispensedRxTotalPages] = useState(1);
+  const [loadingDispensed, setLoadingDispensed] = useState(false);
+  const [selectedRxForRefund, setSelectedRxForRefund] = useState<Prescription | null>(null);
+  const [refundForm, setRefundForm] = useState({ quantityReturned: 1, reason: '' });
+  const [processingRefund, setProcessingRefund] = useState(false);
+  const [rxSearch, setRxSearch] = useState('');
 
   // Prescribe modal
   const [prescribeModal, setPrescribeModal] = useState(false);
@@ -74,11 +93,32 @@ export default function PharmacyPage() {
     catch { /* handled */ }
   }, []);
 
+  const fetchRefunds = useCallback(async () => {
+    setRefundLoading(true);
+    try {
+      const res = await pharmacyRefundApi.getAll(refundPage);
+      setRefunds(res.data.data.content);
+      setRefundTotalPages(res.data.data.totalPages);
+    } catch { /* handled */ } finally { setRefundLoading(false); }
+  }, [refundPage]);
+
+  const fetchDispensedRx = useCallback(async () => {
+    setLoadingDispensed(true);
+    try {
+      const res = await pharmacyApi.getDispensedRx(dispensedRxPage);
+      setDispensedRx(res.data.data.content);
+      setDispensedRxTotalPages(res.data.data.totalPages);
+    } catch { /* handled */ } finally { setLoadingDispensed(false); }
+  }, [dispensedRxPage]);
+
   useEffect(() => {
-    if (tab === 'inventory') fetchDrugs(); else fetchPrescriptions();
-  }, [tab, fetchDrugs, fetchPrescriptions]);
+    if (tab === 'inventory') fetchDrugs();
+    else if (tab === 'prescriptions') fetchPrescriptions();
+    else fetchRefunds();
+  }, [tab, fetchDrugs, fetchPrescriptions, fetchRefunds]);
 
   useEffect(() => { fetchLowStock(); }, [fetchLowStock]);
+  useEffect(() => { if (refundModal) fetchDispensedRx(); }, [refundModal, fetchDispensedRx]);
   useEffect(() => { const t = setTimeout(() => setPage(0), 300); return () => clearTimeout(t); }, [search]);
 
   const handleAddDrug = async () => {
@@ -174,6 +214,37 @@ export default function PharmacyPage() {
     } catch { /* handled */ } finally { setPrescribing(false); }
   };
 
+  const handleRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRxForRefund) return;
+    setProcessingRefund(true);
+    try {
+      const processedById = Number(localStorage.getItem('userId') || 0);
+      const refundAmount = (selectedRxForRefund.quantityDispensed > 0)
+        ? 0 // backend calculates amount based on drug selling price
+        : 0;
+      await pharmacyRefundApi.create({
+        prescriptionId: selectedRxForRefund.id,
+        quantityReturned: refundForm.quantityReturned,
+        refundAmount,
+        reason: refundForm.reason,
+        processedById,
+      });
+      setRefundModal(false);
+      setSelectedRxForRefund(null);
+      setRefundForm({ quantityReturned: 1, reason: '' });
+      fetchRefunds();
+    } catch { /* handled */ } finally { setProcessingRefund(false); }
+  };
+
+  const openRefundModal = () => {
+    setSelectedRxForRefund(null);
+    setRefundForm({ quantityReturned: 1, reason: '' });
+    setRxSearch('');
+    setDispensedRxPage(0);
+    setRefundModal(true);
+  };
+
   const updateForm = (field: string, value: string | number) => setForm((prev) => ({ ...prev, [field]: value }));
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
 
@@ -235,9 +306,58 @@ export default function PharmacyPage() {
     },
   ];
 
+  const refundColumns = [
+    {
+      key: 'patientName', label: 'Patient',
+      render: (r: PharmacyRefund) => (
+        <div>
+          <div className="font-medium text-gray-900">{r.patientName || '—'}</div>
+          <div className="text-xs text-gray-500">{r.patientNo || ''}</div>
+        </div>
+      ),
+    },
+    { key: 'drugName', label: 'Drug' },
+    { key: 'quantityReturned', label: 'Qty Returned' },
+    { key: 'refundAmount', label: 'Refund Amount', render: (r: PharmacyRefund) => `KES ${(r.refundAmount || 0).toLocaleString()}` },
+    { key: 'reason', label: 'Reason' },
+    { key: 'status', label: 'Status', render: (r: PharmacyRefund) => (
+      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.status === 'APPROVED' ? 'bg-green-100 text-green-800' : r.status === 'REJECTED' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>
+        {r.status || 'PENDING'}
+      </span>
+    )},
+    { key: 'processedByName', label: 'Processed By' },
+    { key: 'createdAt', label: 'Date', render: (r: PharmacyRefund) => new Date(r.createdAt).toLocaleString() },
+  ];
+
+  const dispensedRxColumns = [
+    {
+      key: 'patientName', label: 'Patient',
+      render: (rx: Prescription) => (
+        <div>
+          <div className="font-medium text-gray-900">{rx.patientName || '—'}</div>
+          <div className="text-xs text-gray-500">{rx.patientNo || ''}</div>
+        </div>
+      ),
+    },
+    { key: 'drugName', label: 'Drug' },
+    { key: 'dosage', label: 'Dosage' },
+    { key: 'quantityDispensed', label: 'Qty Dispensed' },
+    { key: 'dispensedAt', label: 'Dispensed At', render: (rx: Prescription) => rx.dispensedAt ? new Date(rx.dispensedAt).toLocaleString() : '—' },
+    {
+      key: 'select', label: 'Select',
+      render: (rx: Prescription) => (
+        <button onClick={() => { setSelectedRxForRefund(rx); setRefundForm({ quantityReturned: 1, reason: '' }); }}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg ${selectedRxForRefund?.id === rx.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-blue-50'}`}>
+          {selectedRxForRefund?.id === rx.id ? 'Selected' : 'Select'}
+        </button>
+      ),
+    },
+  ];
+
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'inventory', label: 'Drug Inventory', icon: <Pill className="w-4 h-4" /> },
     { key: 'prescriptions', label: 'Pending Prescriptions', icon: <ClipboardList className="w-4 h-4" /> },
+    { key: 'refunds', label: 'Refunds', icon: <RotateCcw className="w-4 h-4" /> },
   ];
 
   return (
@@ -290,6 +410,18 @@ export default function PharmacyPage() {
 
       {tab === 'prescriptions' && (
         <DataTable columns={rxColumns} data={prescriptions} loading={rxLoading} />
+      )}
+
+      {tab === 'refunds' && (
+        <>
+          <div className="flex justify-end">
+            <button onClick={openRefundModal}
+              className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium">
+              <RotateCcw className="w-4 h-4" /> Process Refund
+            </button>
+          </div>
+          <DataTable columns={refundColumns} data={refunds} page={refundPage} totalPages={refundTotalPages} onPageChange={setRefundPage} loading={refundLoading} />
+        </>
       )}
 
       {/* Add Drug Modal */}
@@ -366,6 +498,80 @@ export default function PharmacyPage() {
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Saving...' : 'Update Drug'}</button>
         </div>
+      </Modal>
+
+      {/* Refund Modal */}
+      <Modal open={refundModal} onClose={() => { setRefundModal(false); setSelectedRxForRefund(null); }} title="Process Drug Refund" size="lg">
+        <form onSubmit={handleRefund} className="space-y-4">
+          <p className="text-sm text-gray-500">Select a dispensed prescription below, then fill in the refund details.</p>
+
+          {/* Search dispensed prescriptions */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Dispensed Prescriptions</label>
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" value={rxSearch} onChange={(e) => setRxSearch(e.target.value)}
+                placeholder="Filter by patient name or drug..." className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            </div>
+            <div className="max-h-52 overflow-y-auto border border-gray-200 rounded-lg">
+              <DataTable
+                columns={dispensedRxColumns}
+                data={dispensedRx.filter((rx) =>
+                  !rxSearch ||
+                  rx.patientName?.toLowerCase().includes(rxSearch.toLowerCase()) ||
+                  rx.drugName?.toLowerCase().includes(rxSearch.toLowerCase()) ||
+                  rx.patientNo?.toLowerCase().includes(rxSearch.toLowerCase())
+                )}
+                page={dispensedRxPage}
+                totalPages={dispensedRxTotalPages}
+                onPageChange={setDispensedRxPage}
+                loading={loadingDispensed}
+              />
+            </div>
+          </div>
+
+          {/* Selected prescription info */}
+          {selectedRxForRefund && (
+            <div className="bg-orange-50 rounded-lg p-3">
+              <p className="text-sm font-semibold text-orange-900 mb-1">Selected: {selectedRxForRefund.drugName}</p>
+              <p className="text-xs text-orange-700">Patient: {selectedRxForRefund.patientName} ({selectedRxForRefund.patientNo})</p>
+              <p className="text-xs text-orange-700">Qty Dispensed: {selectedRxForRefund.quantityDispensed} | Dispensed: {selectedRxForRefund.dispensedAt ? new Date(selectedRxForRefund.dispensedAt).toLocaleDateString() : '—'}</p>
+            </div>
+          )}
+
+          {/* Refund details */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity Returned *</label>
+              <input type="number" min={1} max={selectedRxForRefund?.quantityDispensed || 999}
+                value={refundForm.quantityReturned}
+                onChange={(e) => setRefundForm((p) => ({ ...p, quantityReturned: Number(e.target.value) || 1 }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Reason *</label>
+              <select value={refundForm.reason} onChange={(e) => setRefundForm((p) => ({ ...p, reason: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" required>
+                <option value="">Select reason</option>
+                <option value="Wrong drug dispensed">Wrong drug dispensed</option>
+                <option value="Patient adverse reaction">Patient adverse reaction</option>
+                <option value="Prescription cancelled">Prescription cancelled</option>
+                <option value="Drug not required">Drug not required</option>
+                <option value="Excess quantity">Excess quantity</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => { setRefundModal(false); setSelectedRxForRefund(null); }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+            <button type="submit" disabled={processingRefund || !selectedRxForRefund || !refundForm.reason}
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50">
+              {processingRefund ? 'Processing...' : 'Submit Refund'}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* Prescribe Modal */}

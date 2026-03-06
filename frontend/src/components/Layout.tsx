@@ -7,7 +7,7 @@ import { useHospitalStore } from '../store/hospitalStore';
 import {
   LayoutDashboard, Users, CalendarDays, Stethoscope, Pill, FlaskConical, Scan,
   CreditCard, Shield, BedDouble, UserCog, BarChart3, Bell, LogOut, Settings,
-  Heart, ClipboardList, Activity, ChevronRight, X, Menu, TrendingDown, ScrollText,
+  Heart, ClipboardList, Activity, ChevronRight, X, Menu, TrendingDown, ScrollText, RotateCcw,
 } from 'lucide-react';
 
 const baseNavItems = [
@@ -17,6 +17,7 @@ const baseNavItems = [
   { path: '/triage',        label: 'Triage',         icon: Activity },
   { path: '/visits',        label: 'Consultations',  icon: Stethoscope },
   { path: '/pharmacy',      label: 'Pharmacy',       icon: Pill },
+  { path: '/refunds',       label: 'Refunds',        icon: RotateCcw },
   { path: '/lab',           label: 'Laboratory',     icon: FlaskConical },
   { path: '/imaging',       label: 'Imaging',        icon: Scan },
   { path: '/billing',       label: 'Billing',        icon: CreditCard },

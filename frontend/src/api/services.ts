@@ -1,5 +1,5 @@
 import api from './client';
-import type { ApiResponse, ActivityLog, Patient, Visit, Appointment, Drug, Prescription, LabTest, LabOrder, ImagingOrder, Billing, BillingItem, Payment, InsuranceCompany, InsuranceClaim, Ward, Room, Bed, Admission, NursingNote, User, Dashboard, Notification, Expense, PageResponse, AuthResponse } from '../types';
+import type { ApiResponse, ActivityLog, Patient, Visit, Appointment, Drug, Prescription, LabTest, LabOrder, ImagingOrder, Billing, BillingItem, Payment, InsuranceCompany, InsuranceClaim, Ward, Room, Bed, Admission, NursingNote, User, Dashboard, Notification, Expense, PageResponse, AuthResponse, PharmacyRefund } from '../types';
 
 // Auth
 export const authApi = {
@@ -67,6 +67,16 @@ export const pharmacyApi = {
   getVisitRx: (visitId: number) => api.get<ApiResponse<Prescription[]>>(`/pharmacy/prescriptions/visit/${visitId}`),
   dispense: (id: number, pharmacistId: number) =>
     api.post<ApiResponse<Prescription>>(`/pharmacy/prescriptions/${id}/dispense?pharmacistId=${pharmacistId}`),
+  getDispensedRx: (page = 0) =>
+    api.get<ApiResponse<PageResponse<Prescription>>>(`/pharmacy/prescriptions/dispensed?page=${page}`),
+};
+
+// Pharmacy Refunds
+export const pharmacyRefundApi = {
+  getAll: (page = 0) =>
+    api.get<ApiResponse<PageResponse<PharmacyRefund>>>(`/pharmacy/refunds?page=${page}`),
+  create: (data: { prescriptionId: number; quantityReturned: number; refundAmount: number; reason: string; processedById: number }) =>
+    api.post<ApiResponse<PharmacyRefund>>('/pharmacy/refunds', data),
 };
 
 // Lab

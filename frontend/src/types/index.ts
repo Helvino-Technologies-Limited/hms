@@ -359,6 +359,20 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface PharmacyRefund {
+  id: number;
+  prescriptionId: number;
+  patientName: string;
+  patientNo: string;
+  drugName: string;
+  quantityReturned: number;
+  refundAmount: number;
+  reason: string;
+  status: string;
+  processedByName: string;
+  createdAt: string;
+}
+
 export interface ActivityLog {
   id: number;
   userId: number | null;
