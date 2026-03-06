@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Pill, FlaskConical, Scan, Printer, Share2, AlertTriangle, CreditCard, Receipt } from 'lucide-react';
 import { visitApi, pharmacyApi, labApi, patientApi, billingApi } from '../../api/services';
@@ -7,6 +7,133 @@ import { useHospitalStore } from '../../store/hospitalStore';
 import type { Visit, Drug, LabTest } from '../../types';
 import StatusBadge from '../../components/StatusBadge';
 import Modal from '../../components/Modal';
+import { icd11Diseases } from '../../data/icd11Diseases';
+
+// Defined OUTSIDE VisitDetailPage so React never recreates the component type on re-render.
+// If defined inside, every keystroke triggers a remount which drops focus.
+interface FieldProps {
+  label: string;
+  field: keyof Visit;
+  textarea?: boolean;
+  editing: boolean;
+  form: Partial<Visit>;
+  visit: Visit;
+  onChange: (field: keyof Visit, value: string) => void;
+}
+function Field({ label, field, textarea, editing, form, visit, onChange }: FieldProps) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-500 mb-1">{label}</label>
+      {editing ? (
+        textarea ? (
+          <textarea
+            value={(form[field] as string) || ''}
+            onChange={(e) => onChange(field, e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+            rows={3}
+          />
+        ) : (
+          <input
+            value={(form[field] as string) || ''}
+            onChange={(e) => onChange(field, e.target.value)}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+          />
+        )
+      ) : (
+        <p className="text-sm text-gray-900">{(visit[field] as string) || '-'}</p>
+      )}
+    </div>
+  );
+}
+
+// ICD-11 diagnosis autocomplete — defined outside to avoid remount on re-render
+interface DiagnosisAutocompleteProps {
+  editing: boolean;
+  diagnosisValue: string;
+  diagnosisCodeValue: string;
+  onChange: (field: keyof Visit, value: string) => void;
+}
+function DiagnosisAutocomplete({ editing, diagnosisValue, diagnosisCodeValue, onChange }: DiagnosisAutocompleteProps) {
+  const [query, setQuery] = useState(diagnosisValue || '');
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => { setQuery(diagnosisValue || ''); }, [diagnosisValue]);
+
+  const filtered = useMemo(() => {
+    if (!query || query.trim().length < 2) return [];
+    const q = query.toLowerCase();
+    return icd11Diseases.filter(d =>
+      d.name.toLowerCase().includes(q) ||
+      d.code.toLowerCase().includes(q) ||
+      (d.aliases && d.aliases.some(a => a.toLowerCase().includes(q)))
+    ).slice(0, 10);
+  }, [query]);
+
+  const handleSelect = (name: string, code: string) => {
+    onChange('diagnosis', name);
+    onChange('diagnosisCode', code);
+    setQuery(name);
+    setOpen(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    onChange('diagnosis', val);
+    setOpen(true);
+  };
+
+  if (!editing) {
+    return (
+      <div>
+        <label className="block text-sm font-medium text-gray-500 mb-1">Diagnosis</label>
+        <p className="text-sm text-gray-900">
+          {diagnosisValue || '-'}
+          {diagnosisCodeValue && (
+            <span className="ml-2 text-xs font-mono bg-primary-50 text-primary-700 px-1.5 py-0.5 rounded">
+              ICD-11: {diagnosisCodeValue}
+            </span>
+          )}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <label className="block text-sm font-medium text-gray-500 mb-1">Diagnosis</label>
+      <input
+        value={query}
+        onChange={handleInputChange}
+        onFocus={() => query.trim().length >= 2 && setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        placeholder="Type disease name or ICD-11 code…"
+        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
+      />
+      {diagnosisCodeValue && (
+        <p className="text-xs font-mono text-primary-600 mt-1">
+          ICD-11: {diagnosisCodeValue}
+        </p>
+      )}
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {filtered.map(d => (
+            <button
+              key={d.code}
+              type="button"
+              onMouseDown={() => handleSelect(d.name, d.code)}
+              className="w-full text-left px-3 py-2 hover:bg-primary-50 flex items-center justify-between gap-2"
+            >
+              <span className="text-sm text-gray-900">{d.name}</span>
+              <span className="text-xs font-mono text-primary-600 shrink-0">{d.code}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function VisitDetailPage() {
   const { id } = useParams();
@@ -109,6 +236,10 @@ export default function VisitDetailPage() {
     setShowLabModal(false);
     loadVisit();
   };
+
+  const handleFieldChange = useCallback((field: keyof Visit, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const handleSendToBilling = async () => {
     if (!visit) return;
@@ -219,7 +350,7 @@ ${visit.examination ? `<div class="section">
 
 ${visit.diagnosis ? `<div class="section">
 <h3>Diagnosis</h3>
-<p><strong>${visit.diagnosis}</strong>${visit.diagnosisCode ? ` <span style="color:#888">(ICD-10: ${visit.diagnosisCode})</span>` : ''}</p>
+<p><strong>${visit.diagnosis}</strong>${visit.diagnosisCode ? ` <span style="color:#888">(ICD-11: ${visit.diagnosisCode})</span>` : ''}</p>
 </div>` : ''}
 
 ${visit.treatmentPlan ? `<div class="section">
@@ -322,7 +453,7 @@ ${imagingOrders.map(io => `<tr>
 
     if (visit.chiefComplaint) lines.push('', `*Chief Complaint:*`, visit.chiefComplaint);
     if (visit.diagnosis) {
-      lines.push('', `*Diagnosis:*`, `${visit.diagnosis}${visit.diagnosisCode ? ` (ICD-10: ${visit.diagnosisCode})` : ''}`);
+      lines.push('', `*Diagnosis:*`, `${visit.diagnosis}${visit.diagnosisCode ? ` (ICD-11: ${visit.diagnosisCode})` : ''}`);
     }
     if (visit.treatmentPlan) lines.push('', `*Treatment Plan:*`, visit.treatmentPlan);
 
@@ -351,23 +482,6 @@ ${imagingOrders.map(io => `<tr>
   };
 
   if (!visit) return <div className="p-8 text-center text-gray-400">Loading...</div>;
-
-  const Field = ({ label, field, textarea }: { label: string; field: keyof Visit; textarea?: boolean }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-500 mb-1">{label}</label>
-      {editing ? (
-        textarea ? (
-          <textarea value={(form[field] as string) || ''} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" rows={3} />
-        ) : (
-          <input value={(form[field] as string) || ''} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm" />
-        )
-      ) : (
-        <p className="text-sm text-gray-900">{(visit[field] as string) || '-'}</p>
-      )}
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -482,13 +596,17 @@ ${imagingOrders.map(io => `<tr>
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
           <h2 className="font-semibold text-gray-900">Clinical Notes</h2>
-          <Field label="Chief Complaint" field="chiefComplaint" textarea />
-          <Field label="Presenting Illness" field="presentingIllness" textarea />
-          <Field label="Examination" field="examination" textarea />
-          <Field label="Diagnosis" field="diagnosis" textarea />
-          <Field label="ICD-10 Code" field="diagnosisCode" />
-          <Field label="Treatment Plan" field="treatmentPlan" textarea />
-          <Field label="Doctor Notes" field="doctorNotes" textarea />
+          <Field label="Chief Complaint" field="chiefComplaint" textarea editing={editing} form={form} visit={visit} onChange={handleFieldChange} />
+          <Field label="Presenting Illness" field="presentingIllness" textarea editing={editing} form={form} visit={visit} onChange={handleFieldChange} />
+          <Field label="Examination" field="examination" textarea editing={editing} form={form} visit={visit} onChange={handleFieldChange} />
+          <DiagnosisAutocomplete
+            editing={editing}
+            diagnosisValue={(form.diagnosis as string) || ''}
+            diagnosisCodeValue={(form.diagnosisCode as string) || ''}
+            onChange={handleFieldChange}
+          />
+          <Field label="Treatment Plan" field="treatmentPlan" textarea editing={editing} form={form} visit={visit} onChange={handleFieldChange} />
+          <Field label="Doctor Notes" field="doctorNotes" textarea editing={editing} form={form} visit={visit} onChange={handleFieldChange} />
         </div>
 
         <div className="space-y-6">
@@ -507,7 +625,7 @@ ${imagingOrders.map(io => `<tr>
                 <div key={field}>
                   <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
                   {editing ? (
-                    <input value={(form[field] as string) || ''} onChange={(e) => setForm({ ...form, [field]: e.target.value })}
+                    <input value={(form[field] as string) || ''} onChange={(e) => handleFieldChange(field, e.target.value)}
                       className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm" />
                   ) : (
                     <p className="text-sm font-medium text-gray-900">{(visit[field] as string) || '-'}</p>

@@ -48,7 +48,9 @@ public class InsuranceService {
     public InsuranceCompanyDTO updateCompany(Long id, InsuranceCompanyDTO dto) {
         InsuranceCompany c = companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Insurance Company", id));
+        boolean wasActive = c.isActive(); // preserve: DTO won't carry this
         mapCompanyDtoToEntity(dto, c);
+        c.setActive(wasActive); // restore so the company doesn't disappear
         return mapCompanyToDto(companyRepository.save(c));
     }
 

@@ -14,8 +14,8 @@ public class PatientDTO {
     private String fullName;
     private Gender gender;
     private LocalDate dateOfBirth;
-    @NotBlank
     private String phone;
+    private Integer age; // computed from dateOfBirth
     private String email;
     private String idNumber;
     private String address;

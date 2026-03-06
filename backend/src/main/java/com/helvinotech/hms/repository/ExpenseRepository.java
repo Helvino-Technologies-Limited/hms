@@ -17,4 +17,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.expenseDate BETWEEN :start AND :end")
     BigDecimal sumExpensesByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("UPDATE Expense e SET e.recordedBy = null WHERE e.recordedBy.id = :userId")
+    void nullifyRecordedBy(@org.springframework.data.repository.query.Param("userId") Long userId);
 }

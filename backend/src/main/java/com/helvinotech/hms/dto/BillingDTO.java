@@ -4,6 +4,7 @@ import com.helvinotech.hms.enums.PaymentStatus;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,6 +15,8 @@ public class BillingDTO {
     private Long patientId;
     private String patientName;
     private String patientNo;
+    private Integer patientAge;
+    private LocalDate patientDateOfBirth;
     private Long visitId;
     private BigDecimal totalAmount;
     private BigDecimal paidAmount;

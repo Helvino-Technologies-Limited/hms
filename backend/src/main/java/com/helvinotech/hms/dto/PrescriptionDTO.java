@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 public class PrescriptionDTO {
     private Long id;
     private Long visitId;
+    private String patientName;
+    private String patientNo;
     private Long drugId;
     private String drugName;
     private String dosage;

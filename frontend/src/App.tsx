@@ -22,6 +22,8 @@ import NotificationsPage from './pages/notifications/NotificationsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import DoctorQueuePage from './pages/queue/DoctorQueuePage';
 import TriagePage from './pages/triage/TriagePage';
+import ExpensesPage from './pages/expenses/ExpensesPage';
+import AuditPage from './pages/audit/AuditPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -50,6 +52,8 @@ export default function App() {
             <Route path="/insurance" element={<InsurancePage />} />
             <Route path="/wards" element={<WardsPage />} />
             <Route path="/users" element={<UsersPage />} />
+            <Route path="/audit" element={<AuditPage />} />
+            <Route path="/expenses" element={<ExpensesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<SettingsPage />} />

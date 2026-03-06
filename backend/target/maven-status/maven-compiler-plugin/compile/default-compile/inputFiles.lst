@@ -2,12 +2,14 @@
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/ActivityLogService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/ReportService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/WardDTO.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/HospitalSettingsDTO.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/VisitRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/entity/Visit.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/AdmissionRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/WardService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/exception/ResourceNotFoundException.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/controller/BillingController.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/SettingsService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/NursingNoteDTO.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/VisitType.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/security/JwtTokenProvider.java
@@ -23,6 +25,7 @@
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/BedStatus.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/ImagingOrderDTO.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/AppointmentRepository.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/TriagePriority.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/VisitService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/Gender.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/exception/BadRequestException.java
@@ -36,7 +39,9 @@
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/ExpenseRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/controller/ReportController.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/WardRepository.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/TriageStatus.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/LabOrderDTO.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/entity/HospitalSettings.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/entity/Notification.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/entity/InsuranceClaim.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/AuthResponse.java
@@ -50,12 +55,14 @@
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/LabTestRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/security/JwtAuthenticationFilter.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/AppointmentService.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/controller/SettingsController.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/entity/Ward.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/NotificationService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/enums/ImagingType.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/dto/AdmissionDTO.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/controller/LabController.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/config/SecurityConfig.java
+/home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/HospitalSettingsRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/service/BillingService.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/PatientRepository.java
 /home/kevin/hospitalmanager/backend/src/main/java/com/helvinotech/hms/repository/BedRepository.java

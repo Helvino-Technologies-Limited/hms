@@ -9,6 +9,7 @@ com/helvinotech/hms/entity/BillingItem$BillingItemBuilder.class
 com/helvinotech/hms/dto/InsuranceCompanyDTO.class
 com/helvinotech/hms/dto/AuthRequest.class
 com/helvinotech/hms/controller/PharmacyController.class
+com/helvinotech/hms/enums/TriagePriority.class
 com/helvinotech/hms/enums/VisitType.class
 com/helvinotech/hms/service/WardService.class
 com/helvinotech/hms/dto/AuthResponse$AuthResponseBuilder.class
@@ -45,6 +46,7 @@ com/helvinotech/hms/service/PatientService.class
 com/helvinotech/hms/dto/LabTestDTO.class
 com/helvinotech/hms/repository/BedRepository.class
 com/helvinotech/hms/entity/Visit.class
+com/helvinotech/hms/repository/HospitalSettingsRepository.class
 com/helvinotech/hms/dto/BillingItemDTO.class
 com/helvinotech/hms/entity/Notification$NotificationBuilder.class
 com/helvinotech/hms/dto/InsuranceClaimDTO.class
@@ -79,12 +81,15 @@ com/helvinotech/hms/entity/Expense.class
 com/helvinotech/hms/enums/ClaimStatus.class
 com/helvinotech/hms/config/CorsConfig.class
 com/helvinotech/hms/enums/AdmissionStatus.class
+com/helvinotech/hms/entity/HospitalSettings.class
 com/helvinotech/hms/dto/ApiResponse.class
 com/helvinotech/hms/config/SecurityConfig.class
 com/helvinotech/hms/service/AuthService.class
 com/helvinotech/hms/exception/GlobalExceptionHandler.class
+com/helvinotech/hms/entity/HospitalSettings$HospitalSettingsBuilder.class
 com/helvinotech/hms/service/NotificationService.class
 com/helvinotech/hms/exception/ResourceNotFoundException.class
+com/helvinotech/hms/dto/HospitalSettingsDTO.class
 com/helvinotech/hms/repository/LabTestRepository.class
 com/helvinotech/hms/dto/DashboardDTO$DashboardDTOBuilder.class
 com/helvinotech/hms/dto/PrescriptionDTO.class
@@ -95,6 +100,7 @@ com/helvinotech/hms/entity/Drug.class
 com/helvinotech/hms/dto/AdmissionDTO.class
 com/helvinotech/hms/enums/PaymentStatus.class
 com/helvinotech/hms/service/PharmacyService.class
+com/helvinotech/hms/controller/SettingsController.class
 com/helvinotech/hms/dto/DashboardDTO.class
 com/helvinotech/hms/config/DataInitializer.class
 com/helvinotech/hms/repository/ActivityLogRepository.class
@@ -113,6 +119,7 @@ com/helvinotech/hms/controller/PatientController.class
 com/helvinotech/hms/entity/ActivityLog.class
 com/helvinotech/hms/repository/WardRepository.class
 com/helvinotech/hms/entity/Billing.class
+com/helvinotech/hms/service/SettingsService.class
 com/helvinotech/hms/enums/UserRole.class
 com/helvinotech/hms/entity/NursingNote$NursingNoteBuilder.class
 com/helvinotech/hms/service/DashboardService.class
@@ -136,6 +143,7 @@ com/helvinotech/hms/repository/AdmissionRepository.class
 com/helvinotech/hms/entity/Billing$BillingBuilder.class
 com/helvinotech/hms/repository/UserRepository.class
 com/helvinotech/hms/dto/DrugDTO.class
+com/helvinotech/hms/enums/TriageStatus.class
 com/helvinotech/hms/enums/LabOrderStatus.class
 com/helvinotech/hms/entity/LabTest.class
 com/helvinotech/hms/security/JwtTokenProvider.class

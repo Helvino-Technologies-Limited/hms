@@ -172,6 +172,15 @@ export default function LabPage() {
   };
 
   const orderColumns = [
+    {
+      key: 'patientName', label: 'Patient',
+      render: (o: LabOrder) => (
+        <div>
+          <div className="font-medium text-gray-900">{o.patientName || '—'}</div>
+          <div className="text-xs text-gray-500">{o.patientNo || ''}</div>
+        </div>
+      ),
+    },
     { key: 'testName', label: 'Test' },
     { key: 'testCode', label: 'Code' },
     { key: 'category', label: 'Category' },

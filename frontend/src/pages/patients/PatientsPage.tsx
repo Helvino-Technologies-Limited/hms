@@ -8,6 +8,21 @@ import type { Patient, InsuranceCompany, Gender } from '../../types';
 
 const genderOptions: Gender[] = ['MALE', 'FEMALE', 'OTHER'];
 
+function calcAge(dob: string): number | null {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function isMinor(dob: string): boolean {
+  const age = calcAge(dob);
+  return age !== null && age < 18;
+}
+
 const emptyForm = {
   fullName: '',
   gender: 'MALE' as Gender,
@@ -236,6 +251,12 @@ export default function PatientsPage() {
                   onChange={(e) => updateField('dateOfBirth', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {form.dateOfBirth && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Age: <span className="font-semibold text-gray-700">{calcAge(form.dateOfBirth)} yrs</span>
+                    {isMinor(form.dateOfBirth) && <span className="ml-2 text-amber-600 font-medium">(Minor — phone optional)</span>}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">ID Number</label>
@@ -248,9 +269,11 @@ export default function PatientsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Phone *</label>
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Phone {isMinor(form.dateOfBirth) ? <span className="text-gray-400 font-normal">(optional — minor)</span> : '*'}
+                </label>
                 <input
-                  required
+                  required={!isMinor(form.dateOfBirth)}
                   type="tel"
                   value={form.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
@@ -433,6 +456,12 @@ export default function PatientsPage() {
                 <label className="block text-sm font-medium text-gray-600 mb-1">Date of Birth</label>
                 <input type="date" value={editForm.dateOfBirth} onChange={(e) => updateEditField('dateOfBirth', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {editForm.dateOfBirth && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Age: <span className="font-semibold text-gray-700">{calcAge(editForm.dateOfBirth)} yrs</span>
+                    {isMinor(editForm.dateOfBirth) && <span className="ml-2 text-amber-600 font-medium">(Minor)</span>}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">ID Number</label>
@@ -440,8 +469,10 @@ export default function PatientsPage() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Phone *</label>
-                <input required type="tel" value={editForm.phone} onChange={(e) => updateEditField('phone', e.target.value)}
+                <label className="block text-sm font-medium text-gray-600 mb-1">
+                  Phone {isMinor(editForm.dateOfBirth) ? <span className="text-gray-400 font-normal">(optional — minor)</span> : '*'}
+                </label>
+                <input required={!isMinor(editForm.dateOfBirth)} type="tel" value={editForm.phone} onChange={(e) => updateEditField('phone', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
               <div>

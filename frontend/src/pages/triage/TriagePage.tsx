@@ -22,7 +22,7 @@ export default function TriagePage() {
   const [queue, setQueue] = useState<Visit[]>([]);
   const [labReview, setLabReview] = useState<Visit[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'triage' | 'lab-review'>('triage');
+  const [activeTab, setActiveTab] = useState<'awaiting' | 'triaged' | 'lab-review'>('awaiting');
 
   // New Visit modal
   const [newVisitOpen, setNewVisitOpen] = useState(false);
@@ -141,9 +141,12 @@ export default function TriagePage() {
     } catch { /* */ } finally { setSubmitting(false); }
   };
 
+  const waitingQueue = queue.filter(v => v.triageStatus === 'WAITING');
+  const triagedQueue = queue.filter(v => v.triageStatus === 'TRIAGED' || v.triageStatus === 'IN_CONSULTATION');
+
   const triageStats = {
-    waiting: queue.filter(v => v.triageStatus === 'WAITING').length,
-    triaged: queue.filter(v => v.triageStatus === 'TRIAGED').length,
+    waiting: waitingQueue.length,
+    triaged: triagedQueue.length,
     inConsult: queue.filter(v => v.triageStatus === 'IN_CONSULTATION').length,
     labReview: labReview.length,
   };
@@ -271,14 +274,27 @@ export default function TriagePage() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-200">
         <button
-          onClick={() => setActiveTab('triage')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'triage' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+          onClick={() => setActiveTab('awaiting')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'awaiting' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
           <div className="flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            Triage Queue
-            {triageStats.waiting + triageStats.triaged + triageStats.inConsult > 0 && (
+            Awaiting Triage
+            {triageStats.waiting > 0 && (
               <span className="bg-blue-100 text-blue-700 text-xs font-bold rounded-full px-2 py-0.5">
-                {triageStats.waiting + triageStats.triaged + triageStats.inConsult}
+                {triageStats.waiting}
+              </span>
+            )}
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('triaged')}
+          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'triaged' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Triaged / In Queue
+            {triageStats.triaged > 0 && (
+              <span className="bg-orange-100 text-orange-700 text-xs font-bold rounded-full px-2 py-0.5">
+                {triageStats.triaged}
               </span>
             )}
           </div>
@@ -303,17 +319,30 @@ export default function TriagePage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-100 rounded-xl animate-pulse" />)}
         </div>
-      ) : activeTab === 'triage' ? (
-        queue.length === 0 ? (
+      ) : activeTab === 'awaiting' ? (
+        waitingQueue.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <CheckCircle className="w-12 h-12 text-green-400 mx-auto mb-3" />
-            <p className="text-gray-500 font-medium">No patients in triage queue</p>
-            <p className="text-gray-400 text-sm mt-1">All patients have been seen</p>
+            <p className="text-gray-500 font-medium">No patients awaiting triage</p>
+            <p className="text-gray-400 text-sm mt-1">All new arrivals have been triaged</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Sort: IMMEDIATE first, then URGENT, then LESS_URGENT, then NON_URGENT, then no priority */}
-            {[...queue].sort((a, b) => {
+            {[...waitingQueue].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+              .map(v => <VisitCard key={v.id} visit={v} />)}
+          </div>
+        )
+      ) : activeTab === 'triaged' ? (
+        triagedQueue.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <CheckCircle className="w-12 h-12 text-orange-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No triaged patients in queue</p>
+            <p className="text-gray-400 text-sm mt-1">Triaged patients awaiting consultation will appear here</p>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Sort by priority: IMMEDIATE first */}
+            {[...triagedQueue].sort((a, b) => {
               const order: Record<string, number> = { IMMEDIATE: 0, URGENT: 1, LESS_URGENT: 2, NON_URGENT: 3 };
               const pa = a.triagePriority ? (order[a.triagePriority] ?? 4) : 5;
               const pb = b.triagePriority ? (order[b.triagePriority] ?? 4) : 5;

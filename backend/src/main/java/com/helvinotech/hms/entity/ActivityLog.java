@@ -17,9 +17,13 @@ public class ActivityLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+
+    // Denormalized — survives user deletion
+    private String actorName;
+    private String actorRole;
 
     @Column(nullable = false)
     private String action;
@@ -28,6 +32,7 @@ public class ActivityLog {
 
     private Long entityId;
 
+    @Column(columnDefinition = "TEXT")
     private String details;
 
     private String ipAddress;

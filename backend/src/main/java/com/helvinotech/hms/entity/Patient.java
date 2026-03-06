@@ -33,7 +33,6 @@ public class Patient {
 
     private LocalDate dateOfBirth;
 
-    @Column(nullable = false)
     private String phone;
 
     private String email;

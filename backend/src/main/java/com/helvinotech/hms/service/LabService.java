@@ -162,6 +162,10 @@ public class LabService {
         LabOrderDTO dto = new LabOrderDTO();
         dto.setId(o.getId());
         dto.setVisitId(o.getVisit().getId());
+        if (o.getVisit().getPatient() != null) {
+            dto.setPatientName(o.getVisit().getPatient().getFullName());
+            dto.setPatientNo(o.getVisit().getPatient().getPatientNo());
+        }
         dto.setTestId(o.getTest().getId());
         dto.setTestName(o.getTest().getTestName());
         dto.setTestCode(o.getTest().getTestCode());

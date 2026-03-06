@@ -3,6 +3,7 @@ import { Search, Plus, AlertTriangle, Pill, ClipboardList, FileText, X, Pencil }
 import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import { pharmacyApi, patientApi, visitApi } from '../../api/services';
+import { useAuthStore } from '../../store/authStore';
 import type { Drug, Prescription, Patient, Visit } from '../../types';
 
 type Tab = 'inventory' | 'prescriptions';
@@ -19,6 +20,8 @@ const emptyDrug: Partial<Drug> = {
 };
 
 export default function PharmacyPage() {
+  const { role } = useAuthStore();
+  const isAdmin = role === 'SUPER_ADMIN' || role === 'HOSPITAL_ADMIN';
   const [tab, setTab] = useState<Tab>('inventory');
   const [drugs, setDrugs] = useState<Drug[]>([]);
   const [page, setPage] = useState(0);
@@ -189,10 +192,12 @@ export default function PharmacyPage() {
       key: 'actions', label: 'Action',
       render: (d: Drug) => (
         <div className="flex gap-2">
-          <button onClick={(e) => { e.stopPropagation(); openEditModal(d); }}
-            className="p-1.5 text-gray-400 hover:text-blue-600" title="Edit Drug">
-            <Pencil className="w-4 h-4" />
-          </button>
+          {isAdmin && (
+            <button onClick={(e) => { e.stopPropagation(); openEditModal(d); }}
+              className="p-1.5 text-gray-400 hover:text-blue-600" title="Edit Drug">
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
           <button onClick={(e) => { e.stopPropagation(); openPrescribeModal(d); }}
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700">
             Prescribe
@@ -203,6 +208,15 @@ export default function PharmacyPage() {
   ];
 
   const rxColumns = [
+    {
+      key: 'patientName', label: 'Patient',
+      render: (rx: Prescription) => (
+        <div>
+          <div className="font-medium text-gray-900">{rx.patientName || '—'}</div>
+          <div className="text-xs text-gray-500">{rx.patientNo || ''}</div>
+        </div>
+      ),
+    },
     { key: 'drugName', label: 'Drug' },
     { key: 'dosage', label: 'Dosage' },
     { key: 'frequency', label: 'Frequency' },
@@ -230,7 +244,7 @@ export default function PharmacyPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Pharmacy</h1>
-        {tab === 'inventory' && (
+        {tab === 'inventory' && isAdmin && (
           <button onClick={() => { setForm(emptyDrug); setAddModalOpen(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
             <Plus className="w-4 h-4" /> Add Drug

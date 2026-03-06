@@ -17,7 +17,7 @@ export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
 export type VisitType = 'OPD' | 'IPD' | 'EMERGENCY';
 export type AppointmentStatus = 'SCHEDULED' | 'CHECKED_IN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 export type AppointmentType = 'NEW' | 'REVIEW' | 'FOLLOW_UP' | 'EMERGENCY';
-export type PaymentMethod = 'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER' | 'INSURANCE';
+export type PaymentMethod = 'CASH' | 'MPESA' | 'CARD' | 'BANK_TRANSFER' | 'INSURANCE' | 'DONATION';
 export type PaymentStatus = 'PENDING' | 'PARTIAL' | 'PAID' | 'REFUNDED' | 'WAIVED';
 export type LabOrderStatus = 'ORDERED' | 'SAMPLE_COLLECTED' | 'PROCESSING' | 'COMPLETED' | 'VERIFIED' | 'RELEASED' | 'CANCELLED';
 export type BedStatus = 'AVAILABLE' | 'OCCUPIED' | 'RESERVED' | 'MAINTENANCE';
@@ -41,6 +41,7 @@ export interface User {
   fullName: string;
   email: string;
   password?: string;
+  plainPassword?: string;
   phone: string;
   role: UserRole;
   department: string;
@@ -67,6 +68,7 @@ export interface Patient {
   insuranceCompanyId: number | null;
   insuranceCompanyName: string;
   insuranceMemberNumber: string;
+  age?: number;
 }
 
 export interface Visit {
@@ -142,6 +144,8 @@ export interface Drug {
 export interface Prescription {
   id: number;
   visitId: number;
+  patientName: string;
+  patientNo: string;
   drugId: number;
   drugName: string;
   dosage: string;
@@ -172,6 +176,8 @@ export interface LabTest {
 export interface LabOrder {
   id: number;
   visitId: number;
+  patientName: string;
+  patientNo: string;
   testId: number;
   testName: string;
   testCode: string;
@@ -206,12 +212,26 @@ export interface ImagingOrder {
   createdAt: string;
 }
 
+export interface Expense {
+  id: number;
+  category: string;
+  description: string;
+  amount: number;
+  expenseDate: string;
+  referenceNumber: string;
+  vendor: string;
+  recordedByName: string;
+  createdAt: string;
+}
+
 export interface Billing {
   id: number;
   invoiceNumber: string;
   patientId: number;
   patientName: string;
   patientNo: string;
+  patientAge?: number;
+  patientDateOfBirth?: string;
   visitId: number | null;
   totalAmount: number;
   paidAmount: number;
@@ -336,6 +356,19 @@ export interface Notification {
   title: string;
   message: string;
   read: boolean;
+  createdAt: string;
+}
+
+export interface ActivityLog {
+  id: number;
+  userId: number | null;
+  actorName: string;
+  actorRole: string;
+  action: string;
+  entityType: string | null;
+  entityId: number | null;
+  details: string | null;
+  ipAddress: string | null;
   createdAt: string;
 }
 

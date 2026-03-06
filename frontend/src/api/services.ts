@@ -1,5 +1,5 @@
 import api from './client';
-import type { ApiResponse, Patient, Visit, Appointment, Drug, Prescription, LabTest, LabOrder, ImagingOrder, Billing, BillingItem, Payment, InsuranceCompany, InsuranceClaim, Ward, Room, Bed, Admission, NursingNote, User, Dashboard, Notification, PageResponse, AuthResponse } from '../types';
+import type { ApiResponse, ActivityLog, Patient, Visit, Appointment, Drug, Prescription, LabTest, LabOrder, ImagingOrder, Billing, BillingItem, Payment, InsuranceCompany, InsuranceClaim, Ward, Room, Bed, Admission, NursingNote, User, Dashboard, Notification, Expense, PageResponse, AuthResponse } from '../types';
 
 // Auth
 export const authApi = {
@@ -156,9 +156,11 @@ export const userApi = {
   getByRole: (role: string) => api.get<ApiResponse<User[]>>(`/users/role/${role}`),
   create: (data: Partial<User>) => api.post<ApiResponse<User>>('/users', data),
   update: (id: number, data: Partial<User>) => api.put<ApiResponse<User>>(`/users/${id}`, data),
-  deactivate: (id: number) => api.delete<ApiResponse<void>>(`/users/${id}`),
+  delete: (id: number) => api.delete<ApiResponse<void>>(`/users/${id}`),
   changePassword: (id: number, currentPassword: string, newPassword: string) =>
     api.put<ApiResponse<void>>(`/users/${id}/password`, { currentPassword, newPassword }),
+  adminResetPassword: (id: number, newPassword: string) =>
+    api.put<ApiResponse<void>>(`/users/${id}/admin-reset-password`, { newPassword }),
 };
 
 // Dashboard
@@ -172,6 +174,56 @@ export const reportApi = {
     api.get<ApiResponse<Record<string, unknown>>>(`/reports/financial?startDate=${startDate}&endDate=${endDate}`),
   patients: (startDate: string, endDate: string) =>
     api.get<ApiResponse<Record<string, unknown>>>(`/reports/patients?startDate=${startDate}&endDate=${endDate}`),
+  morbidity: (startDate: string, endDate: string) =>
+    api.get<ApiResponse<Array<{ diagnosis: string; diagnosisCode: string | null; count: number }>>>(`/reports/morbidity?startDate=${startDate}&endDate=${endDate}`),
+  moh: (startDate: string, endDate: string) =>
+    api.get<ApiResponse<Record<string, unknown>>>(`/reports/moh?startDate=${startDate}&endDate=${endDate}`),
+};
+
+// Data Management (SUPER_ADMIN only)
+export const dataApi = {
+  clearPatients: () => api.delete<ApiResponse<void>>('/admin/data/patients'),
+  clearWards: () => api.delete<ApiResponse<void>>('/admin/data/wards'),
+  clearBilling: () => api.delete<ApiResponse<void>>('/admin/data/billing'),
+  clearAppointments: () => api.delete<ApiResponse<void>>('/admin/data/appointments'),
+  clearExpenses: () => api.delete<ApiResponse<void>>('/admin/data/expenses'),
+};
+
+// Audit Logs (SUPER_ADMIN only)
+export const auditApi = {
+  getLogs: (params: { userId?: number; action?: string; start?: string; end?: string; page?: number; size?: number }) => {
+    const q = new URLSearchParams();
+    if (params.userId) q.append('userId', String(params.userId));
+    if (params.action) q.append('action', params.action);
+    if (params.start) q.append('start', params.start);
+    if (params.end) q.append('end', params.end);
+    q.append('page', String(params.page ?? 0));
+    q.append('size', String(params.size ?? 50));
+    return api.get<ApiResponse<PageResponse<ActivityLog>>>(`/audit/logs?${q.toString()}`);
+  },
+};
+
+// Hospital Settings
+export const settingsApi = {
+  get: () => api.get<ApiResponse<{ name: string; tagline: string; address: string; phone: string; email: string }>>('/settings'),
+  update: (data: { name: string; tagline: string; address: string; phone: string; email: string }) =>
+    api.put<ApiResponse<{ name: string; tagline: string; address: string; phone: string; email: string }>>('/settings', data),
+};
+
+// Expenses
+export const expenseApi = {
+  getAll: (page = 0, size = 20) =>
+    api.get<ApiResponse<PageResponse<Expense>>>(`/expenses?page=${page}&size=${size}&sort=expenseDate,desc`),
+  getByDateRange: (start: string, end: string, page = 0) =>
+    api.get<ApiResponse<PageResponse<Expense>>>(`/expenses/range?start=${start}&end=${end}&page=${page}&sort=expenseDate,desc`),
+  getTotal: (start: string, end: string) =>
+    api.get<ApiResponse<number>>(`/expenses/total?start=${start}&end=${end}`),
+  create: (data: Partial<Expense>, recordedById?: number) =>
+    api.post<ApiResponse<Expense>>(`/expenses${recordedById ? `?recordedById=${recordedById}` : ''}`, data),
+  update: (id: number, data: Partial<Expense>) =>
+    api.put<ApiResponse<Expense>>(`/expenses/${id}`, data),
+  delete: (id: number) =>
+    api.delete<ApiResponse<void>>(`/expenses/${id}`),
 };
 
 // Notifications

@@ -12,7 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.Year;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,6 +29,13 @@ public class PatientService {
 
     @Transactional(readOnly = false)
     public PatientDTO createPatient(PatientDTO dto) {
+        // Determine if minor (< 18 years)
+        boolean isMinor = dto.getDateOfBirth() != null &&
+                Period.between(dto.getDateOfBirth(), LocalDate.now()).getYears() < 18;
+        // Phone required for adult patients
+        if (!isMinor && (dto.getPhone() == null || dto.getPhone().isBlank())) {
+            throw new IllegalArgumentException("Phone number is required for adult patients");
+        }
         // Duplicate detection by phone
         if (dto.getPhone() != null && !dto.getPhone().isBlank()) {
             patientRepository.findByPhone(dto.getPhone().trim()).ifPresent(existing -> {
@@ -139,6 +148,9 @@ public class PatientService {
         dto.setAllergies(p.getAllergies());
         dto.setBloodGroup(p.getBloodGroup());
         dto.setInsuranceMemberNumber(p.getInsuranceMemberNumber());
+        if (p.getDateOfBirth() != null) {
+            dto.setAge(Period.between(p.getDateOfBirth(), LocalDate.now()).getYears());
+        }
         if (p.getInsuranceCompany() != null) {
             dto.setInsuranceCompanyId(p.getInsuranceCompany().getId());
             dto.setInsuranceCompanyName(p.getInsuranceCompany().getName());

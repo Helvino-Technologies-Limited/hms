@@ -20,7 +20,9 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final ActivityLogService activityLogService;
 
+    @Transactional(readOnly = false)
     public AuthResponse login(AuthRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -30,6 +32,9 @@ public class AuthService {
         String refreshToken = tokenProvider.generateRefreshToken(request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
+        activityLogService.log(user, "LOGIN", "User", user.getId(),
+                "User logged in: " + user.getEmail(), null);
 
         return AuthResponse.builder()
                 .token(token)

@@ -5,5 +5,6 @@ public enum PaymentMethod {
     MPESA,
     CARD,
     BANK_TRANSFER,
-    INSURANCE
+    INSURANCE,
+    DONATION
 }

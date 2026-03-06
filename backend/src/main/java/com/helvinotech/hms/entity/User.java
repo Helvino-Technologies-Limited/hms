@@ -1,5 +1,6 @@
 package com.helvinotech.hms.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.helvinotech.hms.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,6 +34,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String passwordHash;
 
+    // Stored so admin can view/reset passwords. Only accessible via SUPER_ADMIN role.
+    @Column(name = "plain_password")
+    private String plainPassword;
+
     @Column(unique = true)
     private String phone;
 
@@ -55,11 +60,13 @@ public class User implements UserDetails {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
+    @JsonIgnore
     @Override
     public String getPassword() {
         return passwordHash;

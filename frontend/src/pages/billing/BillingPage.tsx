@@ -8,7 +8,7 @@ import { useHospitalStore } from '../../store/hospitalStore';
 import type { Billing, Patient, PaymentStatus, PaymentMethod } from '../../types';
 
 const paymentStatuses: PaymentStatus[] = ['PENDING', 'PARTIAL', 'PAID', 'REFUNDED', 'WAIVED'];
-const paymentMethods: PaymentMethod[] = ['CASH', 'MPESA', 'CARD', 'BANK_TRANSFER', 'INSURANCE'];
+const paymentMethods: PaymentMethod[] = ['CASH', 'MPESA', 'CARD', 'BANK_TRANSFER', 'INSURANCE', 'DONATION'];
 const serviceTypes = [
   'Consultation', 'Laboratory', 'Pharmacy', 'Imaging', 'Procedure',
   'Bed Charges', 'Nursing', 'Surgical', 'Dental', 'Physiotherapy', 'Other',
@@ -44,10 +44,12 @@ export default function BillingPage() {
   // Add item
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [itemForm, setItemForm] = useState(emptyItemForm);
+  const [addItemError, setAddItemError] = useState('');
 
   // Payment
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
+  const [paymentError, setPaymentError] = useState('');
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -127,6 +129,7 @@ export default function BillingPage() {
     e.preventDefault();
     if (!selectedInvoice) return;
     setSubmitting(true);
+    setAddItemError('');
     try {
       await billingApi.addItem(selectedInvoice.id, {
         serviceType: itemForm.serviceType,
@@ -137,13 +140,17 @@ export default function BillingPage() {
       setAddItemOpen(false);
       setItemForm(emptyItemForm);
       await refreshDetail();
-    } catch { /* handled */ } finally { setSubmitting(false); }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setAddItemError(msg || 'Failed to add service. Please try again.');
+    } finally { setSubmitting(false); }
   };
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedInvoice) return;
     setSubmitting(true);
+    setPaymentError('');
     try {
       await billingApi.processPayment({
         billingId: selectedInvoice.id,
@@ -154,7 +161,10 @@ export default function BillingPage() {
       setPaymentOpen(false);
       setPaymentForm(emptyPaymentForm);
       await refreshDetail();
-    } catch { /* handled */ } finally { setSubmitting(false); }
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setPaymentError(msg || 'Failed to record payment. Please try again.');
+    } finally { setSubmitting(false); }
   };
 
   const formatCurrency = (amount: number) =>
@@ -201,6 +211,7 @@ export default function BillingPage() {
 <div class="info-row"><span class="label">Invoice No:</span><strong>${invoice.invoiceNumber}</strong></div>
 <div class="info-row"><span class="label">Patient:</span><span>${invoice.patientName}</span></div>
 <div class="info-row"><span class="label">Patient No:</span><span>${invoice.patientNo}</span></div>
+${invoice.patientAge != null ? `<div class="info-row"><span class="label">Age:</span><span>${invoice.patientAge} years${invoice.patientAge < 18 ? ' (Minor)' : ''}</span></div>` : ''}
 <div class="info-row"><span class="label">Date:</span><span>${new Date(invoice.createdAt).toLocaleDateString()}</span></div>
 ${invoice.visitId ? `<div class="info-row"><span class="label">Visit #:</span><span>${invoice.visitId}</span></div>` : ''}
 <div class="divider"></div>
@@ -477,6 +488,9 @@ ${invoice.payments && invoice.payments.length > 0 ? `
             {addItemOpen && (
               <div className="bg-blue-50 rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-700 mb-3">Add Service</h4>
+                {addItemError && (
+                  <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{addItemError}</div>
+                )}
                 <form onSubmit={handleAddItem} className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
@@ -515,7 +529,7 @@ ${invoice.payments && invoice.payments.length > 0 ? `
                     </div>
                   )}
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setAddItemOpen(false)}
+                    <button type="button" onClick={() => { setAddItemOpen(false); setAddItemError(''); }}
                       className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
                     <button type="submit" disabled={submitting}
                       className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50">
@@ -572,6 +586,9 @@ ${invoice.payments && invoice.payments.length > 0 ? `
               <div className="bg-green-50 rounded-lg p-4">
                 <h4 className="text-sm font-semibold text-gray-700 mb-1">Record Payment</h4>
                 <p className="text-xs text-gray-500 mb-3">Outstanding balance: <span className="font-semibold text-red-600">{formatCurrency(Math.max(0, invoiceBalance))}</span></p>
+                {paymentError && (
+                  <div className="mb-3 p-2.5 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">{paymentError}</div>
+                )}
                 <form onSubmit={handleRecordPayment} className="space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div>
@@ -596,7 +613,7 @@ ${invoice.payments && invoice.payments.length > 0 ? `
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <button type="button" onClick={() => setPaymentOpen(false)}
+                    <button type="button" onClick={() => { setPaymentOpen(false); setPaymentError(''); }}
                       className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50">Cancel</button>
                     <button type="submit" disabled={submitting || !paymentForm.amount}
                       className="px-3 py-1.5 text-xs font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50">

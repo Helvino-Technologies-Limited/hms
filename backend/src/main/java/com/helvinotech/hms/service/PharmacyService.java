@@ -58,7 +58,9 @@ public class PharmacyService {
     public DrugDTO updateDrug(Long id, DrugDTO dto) {
         Drug drug = drugRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Drug", id));
+        boolean wasActive = drug.isActive(); // preserve: DTO won't carry this
         mapDtoToEntity(dto, drug);
+        drug.setActive(wasActive); // restore so the drug doesn't disappear
         return mapDrugToDto(drugRepository.save(drug));
     }
 
@@ -163,6 +165,10 @@ public class PharmacyService {
         PrescriptionDTO dto = new PrescriptionDTO();
         dto.setId(p.getId());
         dto.setVisitId(p.getVisit().getId());
+        if (p.getVisit().getPatient() != null) {
+            dto.setPatientName(p.getVisit().getPatient().getFullName());
+            dto.setPatientNo(p.getVisit().getPatient().getPatientNo());
+        }
         dto.setDrugId(p.getDrug().getId());
         dto.setDrugName(p.getDrug().getGenericName());
         dto.setDosage(p.getDosage());

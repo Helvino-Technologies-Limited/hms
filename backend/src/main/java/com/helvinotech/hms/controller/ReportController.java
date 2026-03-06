@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -29,5 +30,19 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getPatientReport(startDate, endDate)));
+    }
+
+    @GetMapping("/morbidity")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getMorbidityReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getMorbidityReport(startDate, endDate)));
+    }
+
+    @GetMapping("/moh")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMohReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getMohReport(startDate, endDate)));
     }
 }

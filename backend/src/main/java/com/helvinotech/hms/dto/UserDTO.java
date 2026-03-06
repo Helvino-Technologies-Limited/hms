@@ -14,6 +14,7 @@ public class UserDTO {
     @NotBlank @Email
     private String email;
     private String password;
+    private String plainPassword;
     private String phone;
     @NotNull
     private UserRole role;

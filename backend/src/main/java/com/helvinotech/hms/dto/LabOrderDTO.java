@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 public class LabOrderDTO {
     private Long id;
     private Long visitId;
+    private String patientName;
+    private String patientNo;
     private Long testId;
     private String testName;
     private String testCode;

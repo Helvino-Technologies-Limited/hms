@@ -16,9 +16,9 @@ export default function DashboardPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6 animate-pulse">
+            <div key={i} className="bg-white rounded-2xl shadow-sm p-6 animate-pulse">
               <div className="h-4 bg-gray-100 rounded w-1/2 mb-3" />
               <div className="h-8 bg-gray-100 rounded w-1/3" />
             </div>
@@ -48,23 +48,21 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-xl border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500">{label}</span>
-              <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center`}>
-                <Icon className="w-5 h-5" />
-              </div>
+          <div key={label} className="bg-white rounded-2xl shadow-sm p-5">
+            <div className={`w-10 h-10 rounded-2xl ${color} flex items-center justify-center mb-3`}>
+              <Icon className="w-5 h-5" />
             </div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
+            <div className="text-xl font-bold text-gray-900">{value}</div>
+            <p className="text-xs font-medium text-gray-400 mt-0.5">{label}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4">
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-semibold text-gray-900">Visits by Department</h2>
             <div className="text-sm text-gray-500">{data?.visitsToday ?? 0} visits today</div>
@@ -76,7 +74,7 @@ export default function DashboardPage() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} fontSize={12} />
                 <YAxis axisLine={false} tickLine={false} fontSize={12} allowDecimals={false} />
                 <Tooltip formatter={(v: number | undefined) => [`${v ?? 0}`, 'Visits']} />
-                <Bar dataKey="visits" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="visits" fill="#1877F2" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -87,7 +85,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Alerts */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-6">
           <h2 className="font-semibold text-gray-900 mb-4">Alerts</h2>
           <div className="space-y-3">
             <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">

@@ -12,7 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.Year;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -69,16 +71,21 @@ public class BillingService {
     public BillingDTO addItem(Long billingId, BillingItemDTO itemDto) {
         Billing billing = billingRepository.findById(billingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Billing", billingId));
+        BigDecimal unitPrice = itemDto.getUnitPrice() != null ? itemDto.getUnitPrice() : BigDecimal.ZERO;
+        int quantity = itemDto.getQuantity() != null ? itemDto.getQuantity() : 1;
         BillingItem item = BillingItem.builder()
                 .billing(billing)
                 .serviceType(itemDto.getServiceType())
                 .description(itemDto.getDescription())
-                .quantity(itemDto.getQuantity())
-                .unitPrice(itemDto.getUnitPrice())
-                .totalPrice(itemDto.getUnitPrice().multiply(BigDecimal.valueOf(itemDto.getQuantity())))
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .totalPrice(unitPrice.multiply(BigDecimal.valueOf(quantity)))
                 .build();
-        billing.getItems().add(item);
+        billingItemRepository.save(item);
+        // Reload billing to get fresh items list (avoids stale proxy issues)
+        billing = billingRepository.findById(billingId).get();
         recalculateTotal(billing);
+        updateStatusAfterChange(billing);
         billing = billingRepository.save(billing);
         return mapToDto(billing);
     }
@@ -203,9 +210,21 @@ public class BillingService {
 
     private void recalculateTotal(Billing billing) {
         BigDecimal total = billing.getItems().stream()
-                .map(BillingItem::getTotalPrice)
+                .map(i -> i.getTotalPrice() != null ? i.getTotalPrice() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         billing.setTotalAmount(total);
+    }
+
+    private void updateStatusAfterChange(Billing billing) {
+        BigDecimal paid = billing.getPaidAmount() != null ? billing.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal total = billing.getTotalAmount() != null ? billing.getTotalAmount() : BigDecimal.ZERO;
+        if (paid.compareTo(BigDecimal.ZERO) == 0) {
+            billing.setStatus(PaymentStatus.PENDING);
+        } else if (paid.compareTo(total) >= 0) {
+            billing.setStatus(PaymentStatus.PAID);
+        } else {
+            billing.setStatus(PaymentStatus.PARTIAL);
+        }
     }
 
     private String generateInvoiceNumber() {
@@ -220,6 +239,10 @@ public class BillingService {
         dto.setPatientId(b.getPatient().getId());
         dto.setPatientName(b.getPatient().getFullName());
         dto.setPatientNo(b.getPatient().getPatientNo());
+        if (b.getPatient().getDateOfBirth() != null) {
+            dto.setPatientDateOfBirth(b.getPatient().getDateOfBirth());
+            dto.setPatientAge(Period.between(b.getPatient().getDateOfBirth(), LocalDate.now()).getYears());
+        }
         if (b.getVisit() != null) dto.setVisitId(b.getVisit().getId());
         dto.setTotalAmount(b.getTotalAmount());
         dto.setPaidAmount(b.getPaidAmount());

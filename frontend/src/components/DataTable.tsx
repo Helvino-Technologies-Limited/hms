@@ -20,7 +20,7 @@ export default function DataTable<T extends { id: number }>({ columns, data: raw
   const data = rawData || [];
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8">
+      <div className="bg-white rounded-2xl shadow-sm p-8">
         <div className="animate-pulse space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-10 bg-gray-100 rounded" />
@@ -31,7 +31,7 @@ export default function DataTable<T extends { id: number }>({ columns, data: raw
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
@@ -73,11 +73,11 @@ export default function DataTable<T extends { id: number }>({ columns, data: raw
           <span className="text-sm text-gray-500">Page {page + 1} of {totalPages}</span>
           <div className="flex gap-2">
             <button disabled={page === 0} onClick={() => onPageChange?.(page - 1)}
-              className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50">
+              className="p-1.5 rounded-xl bg-gray-100 disabled:opacity-30 hover:bg-gray-200 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button disabled={page >= totalPages - 1} onClick={() => onPageChange?.(page + 1)}
-              className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-30 hover:bg-gray-50">
+              className="p-1.5 rounded-xl bg-gray-100 disabled:opacity-30 hover:bg-gray-200 transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

@@ -1,12 +1,116 @@
-import { useState } from 'react';
-import { Heart, Settings, Lock, Eye, EyeOff, FileText, Printer } from 'lucide-react';
-import { userApi } from '../../api/services';
+import { useState, useRef } from 'react';
+import { Heart, Settings, Lock, Eye, EyeOff, FileText, Printer, Camera, Trash2, Upload, AlertTriangle } from 'lucide-react';
+import { userApi, dataApi } from '../../api/services';
 import { useAuthStore } from '../../store/authStore';
 import { useHospitalStore } from '../../store/hospitalStore';
 
+function resizeImage(file: File, maxPx = 300): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const size = Math.min(img.width, img.height, maxPx);
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d')!;
+      // Crop to centre square
+      const sx = (img.width - size) / 2;
+      const sy = (img.height - size) / 2;
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+type ClearTarget = { key: string; label: string; description: string; fn: () => Promise<unknown> };
+
+const CLEAR_TARGETS: ClearTarget[] = [
+  {
+    key: 'patients',
+    label: 'All Patients & Clinical Data',
+    description: 'Deletes all patients, visits, triage records, consultations, lab orders, prescriptions, imaging orders, admissions, nursing notes, and billing linked to patients.',
+    fn: () => dataApi.clearPatients(),
+  },
+  {
+    key: 'wards',
+    label: 'Wards, Rooms & Beds',
+    description: 'Deletes all wards, rooms, beds, and admissions (including nursing notes). Ward structure must be re-created from scratch.',
+    fn: () => dataApi.clearWards(),
+  },
+  {
+    key: 'billing',
+    label: 'Billing & Payments',
+    description: 'Deletes all invoices, billing line items, payment records, and insurance claims. Patients are kept.',
+    fn: () => dataApi.clearBilling(),
+  },
+  {
+    key: 'appointments',
+    label: 'Appointments',
+    description: 'Deletes all appointment records. Patients and other data are kept.',
+    fn: () => dataApi.clearAppointments(),
+  },
+  {
+    key: 'expenses',
+    label: 'Expenses',
+    description: 'Deletes all expense records.',
+    fn: () => dataApi.clearExpenses(),
+  },
+];
+
 export default function SettingsPage() {
-  const userId = useAuthStore((s) => s.userId);
+  const { userId, fullName, role, profilePicture, setProfilePicture } = useAuthStore();
+  const isAdmin = role === 'SUPER_ADMIN';
   const hospital = useHospitalStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [picPreview, setPicPreview] = useState<string | null>(null);
+  const [picLoading, setPicLoading] = useState(false);
+  const [picMsg, setPicMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setPicMsg({ type: 'error', text: 'Please select an image file.' });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setPicMsg({ type: 'error', text: 'Image must be smaller than 10 MB.' });
+      return;
+    }
+    setPicLoading(true);
+    setPicMsg(null);
+    try {
+      const resized = await resizeImage(file);
+      setPicPreview(resized);
+    } catch {
+      setPicMsg({ type: 'error', text: 'Failed to process image.' });
+    } finally {
+      setPicLoading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleSavePicture = () => {
+    if (!picPreview) return;
+    setProfilePicture(picPreview);
+    setPicPreview(null);
+    setPicMsg({ type: 'success', text: 'Profile photo updated!' });
+    setTimeout(() => setPicMsg(null), 3000);
+  };
+
+  const handleRemovePicture = () => {
+    setProfilePicture(null);
+    setPicPreview(null);
+    setPicMsg({ type: 'success', text: 'Profile photo removed.' });
+    setTimeout(() => setPicMsg(null), 3000);
+  };
+
+  const displayPic = picPreview ?? profilePicture;
+  const initials = fullName?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?';
   const [profileForm, setProfileForm] = useState({
     name: hospital.name,
     tagline: hospital.tagline,
@@ -15,11 +119,35 @@ export default function SettingsPage() {
     email: hospital.email,
   });
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
   const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMessage, setPwMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Data management
+  const [clearTarget, setClearTarget] = useState<ClearTarget | null>(null);
+  const [confirmText, setConfirmText] = useState('');
+  const [clearLoading, setClearLoading] = useState(false);
+  const [clearMsg, setClearMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const handleClear = async () => {
+    if (!clearTarget || confirmText !== 'DELETE') return;
+    setClearLoading(true);
+    setClearMsg(null);
+    try {
+      const res = await clearTarget.fn() as { data: { message: string } };
+      setClearMsg({ type: 'success', text: res.data.message });
+      setClearTarget(null);
+      setConfirmText('');
+    } catch {
+      setClearMsg({ type: 'error', text: 'Failed to clear data. Please try again.' });
+    } finally {
+      setClearLoading(false);
+    }
+  };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +180,86 @@ export default function SettingsPage() {
       <div className="flex items-center gap-3">
         <Settings className="w-6 h-6 text-primary-600" />
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+      </div>
+
+      {/* ── Profile Picture ── */}
+      <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="flex items-center gap-2 mb-5">
+          <Camera className="w-5 h-5 text-gray-700" />
+          <h2 className="font-semibold text-gray-900">Profile Photo</h2>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          {/* Avatar preview */}
+          <div className="relative flex-shrink-0">
+            <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-primary-100">
+              {displayPic ? (
+                <img src={displayPic} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary-400 to-primary-700 flex items-center justify-center text-white text-3xl font-bold">
+                  {initials}
+                </div>
+              )}
+            </div>
+            {/* Camera overlay button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center shadow-md hover:bg-primary-700 transition-colors"
+            >
+              <Camera className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Info + actions */}
+          <div className="flex-1 text-center sm:text-left">
+            <p className="font-semibold text-gray-900 text-base">{fullName}</p>
+            <p className="text-xs text-gray-400 mb-4">{role?.replace(/_/g, ' ')}</p>
+
+            <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={picLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-xl text-sm font-medium hover:bg-primary-700 disabled:opacity-50 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                {picLoading ? 'Processing…' : 'Upload Photo'}
+              </button>
+              {picPreview && (
+                <button
+                  onClick={handleSavePicture}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-green-700 transition-colors"
+                >
+                  Save Photo
+                </button>
+              )}
+              {(profilePicture || picPreview) && (
+                <button
+                  onClick={() => { setPicPreview(null); if (!picPreview) handleRemovePicture(); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-red-50 hover:text-red-600 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {picPreview ? 'Cancel' : 'Remove'}
+                </button>
+              )}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-3">JPG, PNG or GIF · max 10 MB · auto-cropped to square</p>
+
+            {picMsg && (
+              <div className={`mt-3 text-sm px-3 py-2 rounded-xl inline-block ${picMsg.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {picMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -151,6 +359,75 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      {/* ── Data Management (SUPER_ADMIN only) ── */}
+      {isAdmin && (
+        <div className="bg-white rounded-xl border-2 border-red-200 p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-5 h-5 text-red-600" />
+            <h2 className="font-semibold text-red-700">Data Management</h2>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-bold">SUPER ADMIN ONLY</span>
+          </div>
+          <p className="text-sm text-red-500 mb-5">
+            Permanently delete categories of data. All actions are logged in the Audit Log and cannot be undone.
+          </p>
+
+          {clearMsg && (
+            <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${clearMsg.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+              {clearMsg.text}
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {CLEAR_TARGETS.map((t) => (
+              <div key={t.key} className="border border-red-100 rounded-xl p-4 bg-red-50/40">
+                <p className="font-semibold text-gray-800 text-sm mb-1">{t.label}</p>
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.description}</p>
+                <button
+                  onClick={() => { setClearTarget(t); setConfirmText(''); setClearMsg(null); }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-800 border border-red-200 hover:border-red-400 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Clear {t.label}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {/* Confirmation dialog inline */}
+          {clearTarget && (
+            <div className="mt-5 p-4 bg-red-50 border-2 border-red-300 rounded-xl">
+              <p className="text-sm font-semibold text-red-800 mb-1">
+                Confirm: Clear "{clearTarget.label}"
+              </p>
+              <p className="text-xs text-red-600 mb-3">
+                This will permanently delete all matching records. Type <strong>DELETE</strong> to confirm.
+              </p>
+              <div className="flex items-center gap-3">
+                <input
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                  placeholder='Type DELETE here'
+                  className="flex-1 border-2 border-red-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-red-500"
+                />
+                <button
+                  onClick={handleClear}
+                  disabled={confirmText !== 'DELETE' || clearLoading}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {clearLoading ? 'Clearing...' : 'Confirm Delete'}
+                </button>
+                <button
+                  onClick={() => { setClearTarget(null); setConfirmText(''); }}
+                  className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Receipt / Invoice Settings — full width */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-1">
@@ -161,11 +438,19 @@ export default function SettingsPage() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Edit form */}
-          <form onSubmit={(e) => {
+          <form onSubmit={async (e) => {
             e.preventDefault();
-            hospital.update(profileForm);
-            setProfileSaved(true);
-            setTimeout(() => setProfileSaved(false), 3000);
+            setProfileSaving(true);
+            setProfileError('');
+            try {
+              await hospital.update(profileForm);
+              setProfileSaved(true);
+              setTimeout(() => setProfileSaved(false), 3000);
+            } catch {
+              setProfileError('Failed to save settings. Please try again.');
+            } finally {
+              setProfileSaving(false);
+            }
           }} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Hospital / Facility Name</label>
@@ -199,8 +484,13 @@ export default function SettingsPage() {
                 Receipt settings saved successfully
               </div>
             )}
-            <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700">
-              Save Receipt Settings
+            {profileError && (
+              <div className="text-sm px-3 py-2 rounded-lg bg-red-50 text-red-700">
+                {profileError}
+              </div>
+            )}
+            <button type="submit" disabled={profileSaving} className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50">
+              {profileSaving ? 'Saving...' : 'Save Receipt Settings'}
             </button>
           </form>
 

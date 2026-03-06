@@ -10,11 +10,18 @@ interface AuthState {
   email: string | null;
   role: UserRole | null;
   department: string | null;
+  profilePicture: string | null;
   isAuthenticated: boolean;
   login: (data: AuthResponse) => void;
   logout: () => void;
   fetchDepartment: () => Promise<void>;
+  setProfilePicture: (src: string | null) => void;
 }
+
+const getStoredPicture = () => {
+  const uid = localStorage.getItem('userId');
+  return uid ? localStorage.getItem(`profilePicture_${uid}`) : null;
+};
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('token'),
@@ -24,6 +31,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   email: localStorage.getItem('email'),
   role: localStorage.getItem('role') as UserRole | null,
   department: localStorage.getItem('department'),
+  profilePicture: getStoredPicture(),
   isAuthenticated: !!localStorage.getItem('token'),
   login: (data) => {
     localStorage.setItem('token', data.token);
@@ -48,8 +56,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.clear();
     set({
       token: null, refreshToken: null, userId: null,
-      fullName: null, email: null, role: null, department: null, isAuthenticated: false,
+      fullName: null, email: null, role: null, department: null,
+      profilePicture: null, isAuthenticated: false,
     });
+  },
+  setProfilePicture: (src) => {
+    const uid = get().userId;
+    if (!uid) return;
+    if (src) {
+      localStorage.setItem(`profilePicture_${uid}`, src);
+    } else {
+      localStorage.removeItem(`profilePicture_${uid}`);
+    }
+    set({ profilePicture: src });
   },
   fetchDepartment: async () => {
     const userId = get().userId;
