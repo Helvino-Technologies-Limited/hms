@@ -11,7 +11,11 @@ type Tab = 'inventory' | 'prescriptions' | 'refunds';
 const DRUG_CATEGORIES = [
   'Antibiotics', 'Analgesics', 'Antihistamines', 'Antihypertensives', 'Antidiabetics',
   'Vitamins', 'Antacids', 'Anti-Asthmatic', 'Anti-Hypertensive', 'Anti-Pyretic',
-  'Anti-Diuretic', 'Painkillers', 'Other',
+  'Anti-Diuretic', 'Painkillers', 'Anti-Scabies', 'Anti-Helmetic', 'Anti-Fungal', 'Anti-Malaria',
+  'Antiarrhythmics', 'Antihyperlipidemics', 'Anticoagulants', 'Antidepressants', 'Antipsychotics',
+  'Anti-Epileptics', 'Antivirals', 'Antiparasitics', 'Steroid Inhalers', 'Bronchodilators',
+  'Decongestants', 'Muscle Relaxants', 'Erectile Dysfunction Drugs', 'Stimulants', 'Sedatives',
+  'Opioids/Narcotics', 'Hallucinogens', 'Dissociatives', 'Cannabinoids', 'Other',
 ];
 const FORMULATIONS = ['Tablet', 'Capsule', 'Syrup', 'Injection', 'Cream', 'Ointment', 'Drops', 'Inhaler', 'Suspension'];
 const FREQUENCIES = ['Once daily', 'Twice daily', '3 times daily', '4 times daily', 'Every 4 hours', 'Every 6 hours', 'Every 8 hours', 'Every 12 hours', 'As needed', 'At bedtime'];
