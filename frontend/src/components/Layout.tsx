@@ -104,8 +104,8 @@ export default function Layout() {
             <Heart className="w-5 h-5 text-white" fill="currentColor" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-gray-900 leading-tight">Ogada Church</h1>
-            <p className="text-xs text-primary-500 font-semibold tracking-wide">Medical Clinic</p>
+            <h1 className="text-sm font-bold text-gray-900 leading-tight">Helvino Technologies</h1>
+            <p className="text-xs text-primary-500 font-semibold tracking-wide">Limited</p>
           </div>
         </div>
 
@@ -176,7 +176,7 @@ export default function Layout() {
 
           {/* Left: page title area (desktop) — empty, sidebar has brand */}
           <div className="hidden lg:flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-500">Ogada Church Medical Clinic</span>
+            <span className="text-sm font-semibold text-gray-500">Helvino Technologies Limited</span>
           </div>
 
           {/* Right actions */}

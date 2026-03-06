@@ -1,7 +1,9 @@
 package com.helvinotech.hms.config;
 
+import com.helvinotech.hms.entity.HospitalSettings;
 import com.helvinotech.hms.entity.User;
 import com.helvinotech.hms.enums.UserRole;
+import com.helvinotech.hms.repository.HospitalSettingsRepository;
 import com.helvinotech.hms.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +18,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
-    private static final String ADMIN_EMAIL = "rayvonmbira@gmail.com";
-    private static final String ADMIN_PASSWORD = "Rayvon@123";
-    private static final String ADMIN_NAME = "Rayvon Mbira";
+    private static final String ADMIN_EMAIL = "admin@helvino.org";
+    private static final String ADMIN_PASSWORD = "Hospital@2026";
+    private static final String ADMIN_NAME = "System Administrator";
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
+    private final HospitalSettingsRepository hospitalSettingsRepository;
 
     @Value("${CLEAN_DATA:false}")
     private boolean cleanData;
@@ -39,6 +42,7 @@ public class DataInitializer implements CommandLineRunner {
             deleteNonAdminUsers();
         }
         ensureAdminUser();
+        ensureHospitalSettings();
     }
 
     /**
@@ -121,6 +125,24 @@ public class DataInitializer implements CommandLineRunner {
             });
         } catch (Exception e) {
             log.error("Admin user setup failed — app will continue", e);
+        }
+    }
+
+    private void ensureHospitalSettings() {
+        try {
+            if (hospitalSettingsRepository.findById(1L).isEmpty()) {
+                HospitalSettings settings = new HospitalSettings();
+                settings.setId(1L);
+                settings.setName("Helvino Technologies Limited");
+                settings.setTagline("Modern Healthcare Management System");
+                settings.setAddress("helvino.org");
+                settings.setPhone("0703445756");
+                settings.setEmail("admin@helvino.org");
+                hospitalSettingsRepository.save(settings);
+                log.info("Hospital settings initialised.");
+            }
+        } catch (Exception e) {
+            log.error("Hospital settings setup failed — app will continue", e);
         }
     }
 }

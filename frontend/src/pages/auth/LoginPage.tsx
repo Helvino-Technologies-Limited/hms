@@ -44,8 +44,8 @@ export default function LoginPage() {
             <Heart className="w-6 h-6 text-white" fill="currentColor" />
           </div>
           <div>
-            <p className="text-white font-bold text-lg leading-tight">Ogada Church</p>
-            <p className="text-white/70 text-sm">Medical Clinic</p>
+            <p className="text-white font-bold text-lg leading-tight">Helvino Technologies</p>
+            <p className="text-white/70 text-sm">Limited</p>
           </div>
         </div>
 
@@ -74,7 +74,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer */}
-        <p className="text-white/40 text-xs relative">© {new Date().getFullYear()} Ogada Church Medical Clinic</p>
+        <p className="text-white/40 text-xs relative">© {new Date().getFullYear()} Helvino Technologies Limited</p>
       </div>
 
       {/* ── Right panel / form ── */}
@@ -86,7 +86,7 @@ export default function LoginPage() {
             <div className="w-16 h-16 rounded-3xl bg-primary-600 flex items-center justify-center shadow-lg mb-4">
               <Heart className="w-8 h-8 text-white" fill="currentColor" />
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Ogada Church Medical Clinic</h1>
+            <h1 className="text-xl font-bold text-gray-900">Helvino Technologies Limited</h1>
             <p className="text-gray-400 text-sm mt-1">Hospital Management System</p>
           </div>
 
@@ -165,7 +165,7 @@ export default function LoginPage() {
             </form>
 
             <p className="text-xs text-gray-300 mt-6 text-center">
-              Default: admin@example.com / admin123
+              Default: admin@helvino.org / Hospital@2026
             </p>
           </div>
 
