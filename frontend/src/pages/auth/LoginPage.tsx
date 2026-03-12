@@ -21,8 +21,15 @@ export default function LoginPage() {
       const { data } = await authApi.login(email, password);
       login(data.data);
       navigate('/dashboard');
-    } catch {
-      setError('Invalid email or password. Please try again.');
+    } catch (err: any) {
+      const status = err?.response?.status;
+      if (status === 401) {
+        setError('Invalid email or password. Please try again.');
+      } else if (status === 503 || !status) {
+        setError('Unable to connect to the server. Please try again in a moment.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
